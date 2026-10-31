@@ -229,3 +229,4 @@ const WorkDetailModal = ({ isOpen, onClose, workEntryId, onOpenReturnModal }) =>
 };
 
 export default WorkDetailModal;
+

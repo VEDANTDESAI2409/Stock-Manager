@@ -157,3 +157,4 @@ const StockInModal = ({ isOpen, onClose, products, preselectedProduct, onSuccess
 };
 
 export default StockInModal;
+

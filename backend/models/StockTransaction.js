@@ -64,3 +64,4 @@ StockTransactionSchema.index({ date: -1, type: 1 });
 StockTransactionSchema.index({ product: 1, date: -1 });
 
 export default mongoose.models.StockTransaction || mongoose.model('StockTransaction', StockTransactionSchema);
+

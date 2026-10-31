@@ -336,26 +336,29 @@ export const seedDatabase = async () => {
       });
     }
 
-    // 7. Seed Attendance
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const yest = new Date();
-    yest.setDate(yest.getDate() - 1);
-    const yestStr = yest.toISOString().slice(0, 10);
+    // 7. Seed Attendance (Only if no attendance records exist)
+    const existingAtt = await Attendance.countDocuments();
+    if (existingAtt === 0) {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const yest = new Date();
+      yest.setDate(yest.getDate() - 1);
+      const yestStr = yest.toISOString().slice(0, 10);
 
-    const activeKarigars = await Karigar.find({ status: 'ACTIVE' });
+      const activeKarigars = await Karigar.find({ status: 'ACTIVE' });
 
-    for (const [idx, k] of activeKarigars.entries()) {
-      await Attendance.findOneAndUpdate(
-        { karigar: k._id, date: yestStr },
-        { status: idx === 3 ? 'ABSENT' : idx === 2 ? 'HALF_DAY' : 'PRESENT', notes: '' },
-        { upsert: true }
-      );
+      for (const [idx, k] of activeKarigars.entries()) {
+        await Attendance.findOneAndUpdate(
+          { karigar: k._id, date: yestStr },
+          { status: idx === 3 ? 'ABSENT' : idx === 2 ? 'HALF_DAY' : 'PRESENT', notes: '' },
+          { upsert: true }
+        );
 
-      await Attendance.findOneAndUpdate(
-        { karigar: k._id, date: todayStr },
-        { status: idx === 1 ? 'HALF_DAY' : 'PRESENT', notes: '' },
-        { upsert: true }
-      );
+        await Attendance.findOneAndUpdate(
+          { karigar: k._id, date: todayStr },
+          { status: idx === 1 ? 'HALF_DAY' : 'PRESENT', notes: '' },
+          { upsert: true }
+        );
+      }
     }
 
     console.log('--- Initial Data Ready ---');

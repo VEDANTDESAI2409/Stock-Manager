@@ -61,3 +61,4 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color = 'teal', onClick 
 };
 
 export default StatCard;
+

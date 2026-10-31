@@ -159,3 +159,4 @@ const ProductDetailModal = ({ isOpen, onClose, productId }) => {
 };
 
 export default ProductDetailModal;
+

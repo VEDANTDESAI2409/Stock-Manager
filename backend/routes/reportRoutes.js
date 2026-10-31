@@ -17,3 +17,4 @@ router.get('/karigar-materials', getKarigarMaterialReport);
 router.get('/customer-work', getCustomerWorkReport);
 
 export default router;
+

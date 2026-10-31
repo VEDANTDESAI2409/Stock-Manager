@@ -23,3 +23,4 @@ router.route('/:id')
 router.patch('/:id/toggle-status', toggleKarigarStatus);
 
 export default router;
+

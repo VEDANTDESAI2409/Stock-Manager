@@ -36,3 +36,4 @@ const KarigarSchema = new mongoose.Schema(
 KarigarSchema.index({ fullName: 'text', phone: 'text' });
 
 export default mongoose.models.Karigar || mongoose.model('Karigar', KarigarSchema);
+

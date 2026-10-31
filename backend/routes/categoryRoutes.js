@@ -20,3 +20,4 @@ router.route('/:id')
   .delete(deleteCategory);
 
 export default router;
+

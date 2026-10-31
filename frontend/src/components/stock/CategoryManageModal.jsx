@@ -179,3 +179,4 @@ const CategoryManageModal = ({ isOpen, onClose, categories, onCategoriesUpdated 
 };
 
 export default CategoryManageModal;
+

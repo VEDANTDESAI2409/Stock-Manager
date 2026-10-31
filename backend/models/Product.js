@@ -59,3 +59,4 @@ ProductSchema.index({ name: 'text', description: 'text' });
 ProductSchema.index({ category: 1, currentStock: 1 });
 
 export default mongoose.models.Product || mongoose.model('Product', ProductSchema);
+

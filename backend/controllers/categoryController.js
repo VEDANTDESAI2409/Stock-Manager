@@ -133,3 +133,4 @@ export const deleteCategory = async (req, res, next) => {
     next(err);
   }
 };
+

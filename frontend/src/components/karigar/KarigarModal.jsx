@@ -158,3 +158,4 @@ const KarigarModal = ({ isOpen, onClose, karigar, onSuccess }) => {
 };
 
 export default KarigarModal;
+

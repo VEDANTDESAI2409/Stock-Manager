@@ -113,3 +113,4 @@ const CancelWorkModal = ({ isOpen, onClose, workEntry, onSuccess }) => {
 };
 
 export default CancelWorkModal;
+

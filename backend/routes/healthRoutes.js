@@ -1,6 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import { supportsTransactions } from '../config/db.js';
+import { getConnectionDetails } from '../config/db.js';
 
 const router = express.Router();
 
@@ -14,6 +14,7 @@ router.get('/', (req, res) => {
   };
 
   const isHealthy = dbState === 1;
+  const details = getConnectionDetails();
 
   res.status(isHealthy ? 200 : 503).json({
     status: isHealthy ? 'healthy' : 'degraded',
@@ -22,7 +23,11 @@ router.get('/', (req, res) => {
     uptimeSeconds: Math.floor(process.uptime()),
     database: {
       status: dbStatusMap[dbState] || 'unknown',
-      replicaSetSupported: supportsTransactions(),
+      type: details.connectionType,
+      host: details.host,
+      databaseName: details.dbName,
+      replicaSetSupported: details.replicaSetSupported,
+      transactionsEnabled: details.replicaSetSupported,
     },
   });
 });

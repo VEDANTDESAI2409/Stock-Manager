@@ -94,3 +94,4 @@ WorkEntrySchema.index({ workDate: -1, karigar: 1 });
 WorkEntrySchema.index({ customerName: 'text', customerAddress: 'text' });
 
 export default mongoose.models.WorkEntry || mongoose.model('WorkEntry', WorkEntrySchema);
+

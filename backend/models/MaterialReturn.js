@@ -64,3 +64,4 @@ const MaterialReturnSchema = new mongoose.Schema(
 MaterialReturnSchema.index({ returnDate: -1, karigar: 1 });
 
 export default mongoose.models.MaterialReturn || mongoose.model('MaterialReturn', MaterialReturnSchema);
+

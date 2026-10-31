@@ -329,3 +329,4 @@ const KarigarDetailModal = ({ isOpen, onClose, karigarId }) => {
 };
 
 export default KarigarDetailModal;
+

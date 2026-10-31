@@ -11,3 +11,4 @@ router.route('/')
   .put(updateSettings);
 
 export default router;
+

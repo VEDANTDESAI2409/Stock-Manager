@@ -168,3 +168,4 @@ const StockOutModal = ({ isOpen, onClose, products, preselectedProduct, onSucces
 };
 
 export default StockOutModal;
+

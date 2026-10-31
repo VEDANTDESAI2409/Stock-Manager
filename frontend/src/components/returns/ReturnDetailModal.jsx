@@ -96,3 +96,4 @@ const ReturnDetailModal = ({ isOpen, onClose, returnRecord }) => {
 };
 
 export default ReturnDetailModal;
+

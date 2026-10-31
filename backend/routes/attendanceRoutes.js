@@ -15,3 +15,4 @@ router.post('/save', saveAttendanceForDate);
 router.get('/monthly', getMonthlyAttendance);
 
 export default router;
+

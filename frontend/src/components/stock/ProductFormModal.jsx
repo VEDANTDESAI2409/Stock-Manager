@@ -206,3 +206,4 @@ const ProductFormModal = ({ isOpen, onClose, product, categories, onSuccess }) =
 };
 
 export default ProductFormModal;
+

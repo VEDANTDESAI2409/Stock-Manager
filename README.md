@@ -306,3 +306,4 @@ Before deploying this application to production:
 
 ## 📄 License
 ISC License — Specifically crafted for CCTV stock and technician management.
+

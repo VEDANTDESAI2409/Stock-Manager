@@ -28,3 +28,4 @@ const BusinessSettingSchema = new mongoose.Schema(
 );
 
 export default mongoose.models.BusinessSetting || mongoose.model('BusinessSetting', BusinessSettingSchema);
+

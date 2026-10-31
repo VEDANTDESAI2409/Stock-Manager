@@ -169,3 +169,4 @@ const StockAdjustModal = ({ isOpen, onClose, products, preselectedProduct, onSuc
 };
 
 export default StockAdjustModal;
+

@@ -18,3 +18,4 @@ router.put('/profile', protect, updateProfile);
 router.put('/change-password', protect, changePassword);
 
 export default router;
+

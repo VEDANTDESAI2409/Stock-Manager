@@ -348,3 +348,4 @@ const WorkEntryModal = ({ isOpen, onClose, onSuccess }) => {
 };
 
 export default WorkEntryModal;
+
