@@ -2,6 +2,7 @@ import React from 'react';
 import { Menu, Bell, Search, ShieldAlert, ArrowUpRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import useApiQuery from '../../services/useApiQuery';
 
 const Navbar = ({ toggleMobileSidebar }) => {
   const { admin } = useAuth();
