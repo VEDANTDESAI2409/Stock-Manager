@@ -1,25 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Modal from '../common/Modal';
 import Badge from '../common/Badge';
-import api from '../../services/api';
+import useApiQuery from '../../services/useApiQuery';
 import { User, MapPin, Calendar, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
 
 const WorkDetailModal = ({ isOpen, onClose, workEntryId, onOpenReturnModal }) => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (workEntryId && isOpen) {
-      setLoading(true);
-      api
-        .get(`/work-entries/${workEntryId}`)
-        .then((res) => {
-          if (res.data?.success) setData(res.data.data);
-        })
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    }
-  }, [workEntryId, isOpen]);
+  const workQuery = useApiQuery(`/work-entries/${workEntryId || ''}`, {
+    enabled: Boolean(workEntryId && isOpen),
+    staleTime: 10_000,
+  });
+  const data = workQuery.data?.data;
+  const loading = workQuery.isLoading;
 
   if (!isOpen) return null;
 

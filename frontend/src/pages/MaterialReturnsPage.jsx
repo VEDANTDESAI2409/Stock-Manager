@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import EmptyState from '../components/common/EmptyState';
 import api from '../services/api';
+import useApiQuery from '../services/useApiQuery';
 import { useToast } from '../context/ToastContext';
 import {
   RotateCcw,
@@ -19,46 +20,27 @@ import ReturnDetailModal from '../components/returns/ReturnDetailModal';
 const MaterialReturnsPage = () => {
   const { showSuccess, showError } = useToast();
 
-  const [returns, setReturns] = useState([]);
-  const [karigars, setKarigars] = useState([]);
-  const [loading, setLoading] = useState(true);
-
   // Filters
   const [selectedKarigar, setSelectedKarigar] = useState('ALL');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const karigarsQuery = useApiQuery('/karigars', { staleTime: 30_000 });
+  const returnsQuery = useApiQuery('/returns', {
+    params: {
+      karigar: selectedKarigar !== 'ALL' ? selectedKarigar : undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+      limit: 100,
+    },
+    staleTime: 15_000,
+  });
+  const karigars = karigarsQuery.data?.data || [];
+  const returns = returnsQuery.data?.data || [];
+  const loading = karigarsQuery.isLoading || returnsQuery.isLoading;
 
   // Modals
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [selectedReturn, setSelectedReturn] = useState(null);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [kRes, rRes] = await Promise.all([
-        api.get('/karigars'),
-        api.get('/returns', {
-          params: {
-            karigar: selectedKarigar !== 'ALL' ? selectedKarigar : undefined,
-            startDate: startDate || undefined,
-            endDate: endDate || undefined,
-            limit: 100,
-          },
-        }),
-      ]);
-
-      if (kRes.data?.success) setKarigars(kRes.data.data);
-      if (rRes.data?.success) setReturns(rRes.data.data);
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [selectedKarigar, startDate, endDate]);
 
   return (
     <div className="space-y-6">
@@ -224,7 +206,6 @@ const MaterialReturnsPage = () => {
         isOpen={isReturnModalOpen}
         onClose={() => setIsReturnModalOpen(false)}
         preselectedWorkEntry={null}
-        onSuccess={fetchData}
       />
 
       <ReturnDetailModal

@@ -58,7 +58,7 @@ const StockAdjustModal = ({ isOpen, onClose, products, preselectedProduct, onSuc
       });
       showSuccess(`Stock for ${selectedProduct.name} adjusted to ${newQuantity}.`);
       setReason('');
-      onSuccess();
+      onSuccess?.();
       onClose();
     } catch (err) {
       showError(err.message);

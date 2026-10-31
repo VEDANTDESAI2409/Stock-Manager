@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Badge from '../components/common/Badge';
 import EmptyState from '../components/common/EmptyState';
 import api from '../services/api';
+import useApiQuery from '../services/useApiQuery';
 import { useToast } from '../context/ToastContext';
 import { exportToCSV } from '../utils/csvExport';
 import {
@@ -26,62 +27,31 @@ const AttendancePage = () => {
   // Daily Mode States
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
   const [dailySheet, setDailySheet] = useState([]);
-  const [summary, setSummary] = useState(null);
-  const [loadingDaily, setLoadingDaily] = useState(false);
   const [savingDaily, setSavingDaily] = useState(false);
 
   // Monthly Mode States
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [monthlyReport, setMonthlyReport] = useState([]);
-  const [daysInMonth, setDaysInMonth] = useState(30);
-  const [loadingMonthly, setLoadingMonthly] = useState(false);
-
-  // Fetch Daily Attendance
-  const fetchDailyAttendance = async () => {
-    setLoadingDaily(true);
-    try {
-      const res = await api.get(`/attendance/date/${selectedDate}`);
-      if (res.data?.success) {
-        setDailySheet(res.data.data);
-        setSummary(res.data.summary);
-      }
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      setLoadingDaily(false);
-    }
-  };
+  const dailyQuery = useApiQuery(`/attendance/date/${selectedDate}`, {
+    enabled: activeTab === 'daily',
+    staleTime: 5_000,
+  });
+  const monthlyQuery = useApiQuery('/attendance/monthly', {
+    params: { year: selectedYear, month: selectedMonth },
+    enabled: activeTab === 'monthly',
+    staleTime: 15_000,
+  });
+  const summary = dailyQuery.data?.summary;
+  const monthlyReport = monthlyQuery.data?.data || [];
+  const daysInMonth = monthlyQuery.data?.daysInMonth || 30;
+  const loadingDaily = dailyQuery.isLoading;
+  const loadingMonthly = monthlyQuery.isLoading;
 
   useEffect(() => {
-    if (activeTab === 'daily') {
-      fetchDailyAttendance();
+    if (dailyQuery.data?.success) {
+      setDailySheet(dailyQuery.data.data);
     }
-  }, [selectedDate, activeTab]);
-
-  // Fetch Monthly Report
-  const fetchMonthlyReport = async () => {
-    setLoadingMonthly(true);
-    try {
-      const res = await api.get('/attendance/monthly', {
-        params: { year: selectedYear, month: selectedMonth },
-      });
-      if (res.data?.success) {
-        setMonthlyReport(res.data.data);
-        setDaysInMonth(res.data.daysInMonth);
-      }
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      setLoadingMonthly(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'monthly') {
-      fetchMonthlyReport();
-    }
-  }, [selectedYear, selectedMonth, activeTab]);
+  }, [selectedDate, dailyQuery.dataUpdatedAt]);
 
   // Update a single karigar's status in the local daily sheet
   const handleStatusChange = (karigarId, status) => {
@@ -116,7 +86,6 @@ const AttendancePage = () => {
 
       const res = await api.post('/attendance/save', payload);
       showSuccess(res.data?.message || 'Attendance saved successfully.');
-      fetchDailyAttendance();
     } catch (err) {
       showError(err.message);
     } finally {

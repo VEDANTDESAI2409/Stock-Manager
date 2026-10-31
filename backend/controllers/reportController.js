@@ -13,38 +13,47 @@ import StockTransaction from '../models/StockTransaction.js';
 export const getDashboardStats = async (req, res, next) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    // 1. Products summary
-    const allProducts = await Product.find({ isActive: true }).populate('category', 'name');
+    const [allProducts, totalKarigars, todayAttendances, recentWorkEntries, recentReturns, recentActivity] =
+      await Promise.all([
+        Product.find({ isActive: true })
+          .populate('category', 'name'),
+        Karigar.countDocuments({ status: 'ACTIVE' }),
+        Attendance.find({ date: today }).select('status').lean(),
+        WorkEntry.find()
+          .populate('karigar', 'fullName phone')
+          .populate('materials.product', 'name unit')
+          .sort({ workDate: -1, createdAt: -1 })
+          .limit(5),
+        MaterialReturn.find()
+          .populate('karigar', 'fullName')
+          .populate('workEntry', 'workOrderNumber customerName')
+          .populate('items.product', 'name unit')
+          .sort({ returnDate: -1, createdAt: -1 })
+          .limit(5),
+        WorkEntry.aggregate([
+          { $match: { workDate: { $gte: sevenDaysAgo }, status: { $ne: 'CANCELLED' } } },
+          {
+            $group: {
+              _id: { $dateToString: { format: '%Y-%m-%d', date: '$workDate' } },
+              workCount: { $sum: 1 },
+            },
+          },
+          { $sort: { _id: 1 } },
+        ]),
+      ]);
+
+    // Product summary and category chart
     const totalProducts = allProducts.length;
     const lowStockProductsList = allProducts.filter((p) => p.currentStock <= p.minStock);
     const lowStockCount = lowStockProductsList.length;
 
-    // 2. Karigars summary
-    const totalKarigars = await Karigar.countDocuments({ status: 'ACTIVE' });
-
-    // 3. Today's Attendance summary
-    const todayAttendances = await Attendance.find({ date: today });
     const presentToday = todayAttendances.filter((a) => a.status === 'PRESENT').length;
     const absentToday = todayAttendances.filter((a) => a.status === 'ABSENT').length;
     const halfDayToday = todayAttendances.filter((a) => a.status === 'HALF_DAY').length;
 
-    // 4. Recent Work Entries
-    const recentWorkEntries = await WorkEntry.find()
-      .populate('karigar', 'fullName phone')
-      .populate('materials.product', 'name unit')
-      .sort({ workDate: -1, createdAt: -1 })
-      .limit(5);
-
-    // 5. Recent Material Returns
-    const recentReturns = await MaterialReturn.find()
-      .populate('karigar', 'fullName')
-      .populate('workEntry', 'workOrderNumber customerName')
-      .populate('items.product', 'name unit')
-      .sort({ returnDate: -1, createdAt: -1 })
-      .limit(5);
-
-    // 6. Category-wise stock aggregation for visual charts
     const categoryAgg = {};
     allProducts.forEach((p) => {
       const catName = p.category ? p.category.name : 'Uncategorized';
@@ -55,20 +64,6 @@ export const getDashboardStats = async (req, res, next) => {
       categoryAgg[catName].totalStock += p.currentStock;
     });
     const categoryStockChart = Object.values(categoryAgg);
-
-    // 7. Recent 7-days Work Activity
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentActivity = await WorkEntry.aggregate([
-      { $match: { workDate: { $gte: sevenDaysAgo }, status: { $ne: 'CANCELLED' } } },
-      {
-        $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$workDate' } },
-          workCount: { $sum: 1 },
-        },
-      },
-      { $sort: { _id: 1 } },
-    ]);
 
     res.status(200).json({
       success: true,

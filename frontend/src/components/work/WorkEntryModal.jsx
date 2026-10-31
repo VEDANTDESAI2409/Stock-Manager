@@ -1,14 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import api from '../../services/api';
+import useApiQuery from '../../services/useApiQuery';
 import { useToast } from '../../context/ToastContext';
 import { Plus, Trash2, AlertCircle } from 'lucide-react';
 
 const WorkEntryModal = ({ isOpen, onClose, onSuccess }) => {
   const { showSuccess, showError } = useToast();
-  const [karigars, setKarigars] = useState([]);
-  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const karigarsQuery = useApiQuery('/karigars', {
+    params: { status: 'ACTIVE' },
+    enabled: isOpen,
+    staleTime: 15_000,
+  });
+  const productsQuery = useApiQuery('/products', {
+    params: { all: 'true' },
+    enabled: isOpen,
+    staleTime: 15_000,
+  });
+  const karigars = karigarsQuery.data?.data || [];
+  const products = productsQuery.data?.data || [];
 
   // Form Fields
   const [workDate, setWorkDate] = useState(new Date().toISOString().slice(0, 10));
@@ -24,26 +35,10 @@ const WorkEntryModal = ({ isOpen, onClose, onSuccess }) => {
   ]);
 
   useEffect(() => {
-    if (isOpen) {
-      // Fetch active karigars and products with current stock
-      Promise.all([
-        api.get('/karigars?status=ACTIVE'),
-        api.get('/products?all=true'),
-      ])
-        .then(([karigarRes, prodRes]) => {
-          if (karigarRes.data?.success) {
-            setKarigars(karigarRes.data.data);
-            if (karigarRes.data.data.length > 0 && !karigarId) {
-              setKarigarId(karigarRes.data.data[0]._id);
-            }
-          }
-          if (prodRes.data?.success) {
-            setProducts(prodRes.data.data);
-          }
-        })
-        .catch(console.error);
+    if (isOpen && karigars.length > 0 && !karigarId) {
+      setKarigarId(karigars[0]._id);
     }
-  }, [isOpen]);
+  }, [isOpen, karigarsQuery.dataUpdatedAt, karigarId]);
 
   const addMaterialRow = () => {
     setMaterials([...materials, { product: '', quantity: 1 }]);
@@ -127,7 +122,7 @@ const WorkEntryModal = ({ isOpen, onClose, onSuccess }) => {
 
       const res = await api.post('/work-entries', payload);
       showSuccess(res.data?.message || 'Work entry created and stock deducted successfully.');
-      onSuccess();
+      onSuccess?.();
       onClose();
     } catch (err) {
       showError(err.message);

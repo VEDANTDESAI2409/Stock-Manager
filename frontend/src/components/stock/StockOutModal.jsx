@@ -52,7 +52,7 @@ const StockOutModal = ({ isOpen, onClose, products, preselectedProduct, onSucces
       showSuccess(`Removed ${quantity} ${selectedProduct?.unit || 'units'} from stock.`);
       setQuantity(1);
       setReason('');
-      onSuccess();
+      onSuccess?.();
       onClose();
     } catch (err) {
       showError(err.message);

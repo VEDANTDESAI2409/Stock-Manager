@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Badge from '../components/common/Badge';
 import EmptyState from '../components/common/EmptyState';
 import api from '../services/api';
+import useApiQuery from '../services/useApiQuery';
 import { useToast } from '../context/ToastContext';
 import {
   Users,
@@ -23,51 +24,34 @@ import KarigarDetailModal from '../components/karigar/KarigarDetailModal';
 const KarigarsPage = () => {
   const { showSuccess, showError } = useToast();
 
-  const [karigars, setKarigars] = useState([]);
-  const [loading, setLoading] = useState(true);
-
   // Filters
   const [search, setSearch] = useState('');
+  const [submittedSearch, setSubmittedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const karigarsQuery = useApiQuery('/karigars', {
+    params: {
+      search: submittedSearch || undefined,
+      status: statusFilter !== 'ALL' ? statusFilter : undefined,
+    },
+    staleTime: 30_000,
+  });
+  const karigars = karigarsQuery.data?.data || [];
+  const loading = karigarsQuery.isLoading;
 
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingKarigar, setEditingKarigar] = useState(null);
   const [detailKarigarId, setDetailKarigarId] = useState(null);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('/karigars', {
-        params: {
-          search: search.trim() || undefined,
-          status: statusFilter !== 'ALL' ? statusFilter : undefined,
-        },
-      });
-      if (res.data?.success) {
-        setKarigars(res.data.data);
-      }
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [statusFilter]);
-
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchData();
+    setSubmittedSearch(search.trim());
   };
 
   const handleToggleStatus = async (karigar) => {
     try {
       const res = await api.patch(`/karigars/${karigar._id}/toggle-status`);
       showSuccess(res.data?.message || 'Status updated');
-      fetchData();
     } catch (err) {
       showError(err.message);
     }
@@ -113,7 +97,10 @@ const KarigarsPage = () => {
 
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => {
+            setSubmittedSearch(search.trim());
+            setStatusFilter(e.target.value);
+          }}
           className="px-3.5 py-2 rounded-xl border border-surface-border text-xs sm:text-sm font-medium focus:outline-none focus:border-primary-500 bg-white"
         >
           <option value="ALL">All Technicians</option>
@@ -235,7 +222,6 @@ const KarigarsPage = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         karigar={editingKarigar}
-        onSuccess={fetchData}
       />
 
       <KarigarDetailModal

@@ -72,7 +72,7 @@ const ProductFormModal = ({ isOpen, onClose, product, categories, onSuccess }) =
         });
         showSuccess('Product added to inventory successfully.');
       }
-      onSuccess();
+      onSuccess?.();
       onClose();
     } catch (err) {
       showError(err.message);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import useApiQuery from '../services/useApiQuery';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import {
@@ -36,34 +37,28 @@ const SettingsPage = () => {
   const [savingBusiness, setSavingBusiness] = useState(false);
 
   // System Health State
-  const [healthInfo, setHealthInfo] = useState(null);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const settingsQuery = useApiQuery('/settings', { staleTime: 5 * 60_000 });
+  const healthQuery = useApiQuery('/health', { staleTime: 60_000 });
+  const healthInfo = healthQuery.data;
 
   useEffect(() => {
-    // Fetch Business Settings
-    api
-      .get('/settings')
-      .then((res) => {
-        if (res.data?.success && res.data.data?.settings) {
-          const s = res.data.data.settings;
-          setBusinessName(s.businessName || '');
-          setContactNumber(s.contactNumber || '');
-          setBusinessEmail(s.email || '');
-          setBusinessAddress(s.address || '');
-        }
-      })
-      .catch(console.error);
-
-    // Fetch Health
-    api
-      .get('/health')
-      .then((res) => setHealthInfo(res.data))
-      .catch(console.error);
-
     if (admin) {
       setProfileName(admin.name || '');
       setProfileEmail(admin.email || '');
     }
   }, [admin]);
+
+  useEffect(() => {
+    const settings = settingsQuery.data?.data?.settings;
+    if (!settingsLoaded && settings) {
+      setBusinessName(settings.businessName || '');
+      setContactNumber(settings.contactNumber || '');
+      setBusinessEmail(settings.email || '');
+      setBusinessAddress(settings.address || '');
+      setSettingsLoaded(true);
+    }
+  }, [settingsQuery.dataUpdatedAt, settingsLoaded]);
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();

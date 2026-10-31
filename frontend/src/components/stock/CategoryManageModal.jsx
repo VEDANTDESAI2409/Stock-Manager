@@ -40,7 +40,7 @@ const CategoryManageModal = ({ isOpen, onClose, categories, onCategoriesUpdated 
         showSuccess('Category added.');
       }
       resetForm();
-      onCategoriesUpdated();
+      onCategoriesUpdated?.();
     } catch (err) {
       showError(err.message);
     } finally {
@@ -58,7 +58,7 @@ const CategoryManageModal = ({ isOpen, onClose, categories, onCategoriesUpdated 
     try {
       await api.delete(`/categories/${cat._id}`);
       showSuccess('Category deleted.');
-      onCategoriesUpdated();
+      onCategoriesUpdated?.();
     } catch (err) {
       showError(err.message);
     }

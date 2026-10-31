@@ -19,10 +19,15 @@ export const getAttendanceByDate = async (req, res, next) => {
     const targetDate = req.params.date || formatDate();
 
     // Get all active Karigars
-    const karigars = await Karigar.find({ status: 'ACTIVE' }).sort({ fullName: 1 });
+    const karigars = await Karigar.find({ status: 'ACTIVE' })
+      .select('_id fullName phone')
+      .sort({ fullName: 1 })
+      .lean();
 
     // Get existing attendance records for this date
-    const records = await Attendance.find({ date: targetDate });
+    const records = await Attendance.find({ date: targetDate })
+      .select('karigar status notes')
+      .lean();
     const recordMap = new Map(records.map((r) => [r.karigar.toString(), r]));
 
     const sheet = karigars.map((k) => {
@@ -118,17 +123,31 @@ export const getMonthlyAttendance = async (req, res, next) => {
     const y = parseInt(year, 10);
     const m = parseInt(month, 10);
     const monthStr = m.toString().padStart(2, '0');
-    const regexPattern = `^${y}-${monthStr}-`;
+    const monthStart = `${y}-${monthStr}-01`;
+    const nextMonth = new Date(y, m, 1);
+    const nextMonthStart = `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1).toString().padStart(2, '0')}-01`;
 
-    const karigars = await Karigar.find().sort({ fullName: 1 });
-    const records = await Attendance.find({ date: { $regex: regexPattern } });
+    const [karigars, records] = await Promise.all([
+      Karigar.find().select('_id fullName phone status').sort({ fullName: 1 }).lean(),
+      Attendance.find({ date: { $gte: monthStart, $lt: nextMonthStart } })
+        .select('karigar date status')
+        .lean(),
+    ]);
+
+    const recordsByKarigar = new Map();
+    records.forEach((record) => {
+      const karigarId = record.karigar.toString();
+      const karigarRecords = recordsByKarigar.get(karigarId) || [];
+      karigarRecords.push(record);
+      recordsByKarigar.set(karigarId, karigarRecords);
+    });
 
     // Days in this month
     const daysInMonth = new Date(y, m, 0).getDate();
 
     // Aggregate stats per karigar
     const report = karigars.map((k) => {
-      const kRecords = records.filter((r) => r.karigar.toString() === k._id.toString());
+      const kRecords = recordsByKarigar.get(k._id.toString()) || [];
       const dailyMap = {};
       let presentCount = 0;
       let absentCount = 0;

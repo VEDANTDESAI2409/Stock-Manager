@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatCard from '../components/common/StatCard';
 import Badge from '../components/common/Badge';
 import EmptyState from '../components/common/EmptyState';
-import api from '../services/api';
+import useApiQuery from '../services/useApiQuery';
 import {
   Boxes,
   AlertTriangle,
@@ -38,10 +38,15 @@ import ProductDetailModal from '../components/stock/ProductDetailModal';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
+  const dashboardQuery = useApiQuery('/reports/dashboard', { staleTime: 15_000 });
+  const categoriesQuery = useApiQuery('/categories', { staleTime: 60_000 });
+  const productsQuery = useApiQuery('/products', {
+    params: { all: 'true' },
+    staleTime: 30_000,
+  });
+  const data = dashboardQuery.data?.data;
+  const categories = categoriesQuery.data?.data || [];
+  const products = productsQuery.data?.data || [];
 
   // Modal States for Quick Actions
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
@@ -51,29 +56,6 @@ const DashboardPage = () => {
   const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [preselectedStockInProd, setPreselectedStockInProd] = useState(null);
-
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    try {
-      const [dashRes, catRes, prodRes] = await Promise.all([
-        api.get('/reports/dashboard'),
-        api.get('/categories'),
-        api.get('/products?all=true'),
-      ]);
-
-      if (dashRes.data?.success) setData(dashRes.data.data);
-      if (catRes.data?.success) setCategories(catRes.data.data);
-      if (prodRes.data?.success) setProducts(prodRes.data.data);
-    } catch (err) {
-      console.error('Failed to load dashboard:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
 
   const summary = data?.summary || {
     totalProducts: 0,
@@ -452,7 +434,6 @@ const DashboardPage = () => {
         onClose={() => setIsAddProductOpen(false)}
         product={null}
         categories={categories}
-        onSuccess={fetchDashboardData}
       />
 
       <StockInModal
@@ -460,20 +441,17 @@ const DashboardPage = () => {
         onClose={() => setIsStockInOpen(false)}
         products={products}
         preselectedProduct={preselectedStockInProd}
-        onSuccess={fetchDashboardData}
       />
 
       <WorkEntryModal
         isOpen={isWorkModalOpen}
         onClose={() => setIsWorkModalOpen(false)}
-        onSuccess={fetchDashboardData}
       />
 
       <MaterialReturnModal
         isOpen={isReturnModalOpen}
         onClose={() => setIsReturnModalOpen(false)}
         preselectedWorkEntry={null}
-        onSuccess={fetchDashboardData}
       />
 
       <WorkDetailModal

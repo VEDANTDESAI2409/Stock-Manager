@@ -1,25 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Modal from '../common/Modal';
 import Badge from '../common/Badge';
-import api from '../../services/api';
+import useApiQuery from '../../services/useApiQuery';
 import { Package, History, ArrowDownRight, ArrowUpRight, ShieldAlert } from 'lucide-react';
 
 const ProductDetailModal = ({ isOpen, onClose, productId }) => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (productId && isOpen) {
-      setLoading(true);
-      api
-        .get(`/products/${productId}`)
-        .then((res) => {
-          if (res.data?.success) setData(res.data.data);
-        })
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    }
-  }, [productId, isOpen]);
+  const productQuery = useApiQuery(`/products/${productId || ''}`, {
+    enabled: Boolean(productId && isOpen),
+    staleTime: 15_000,
+  });
+  const data = productQuery.data?.data;
+  const loading = productQuery.isLoading;
 
   if (!isOpen) return null;
 

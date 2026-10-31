@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Badge from '../components/common/Badge';
 import EmptyState from '../components/common/EmptyState';
 import api from '../services/api';
+import useApiQuery from '../services/useApiQuery';
 import { useToast } from '../context/ToastContext';
 import {
   Truck,
@@ -26,16 +27,28 @@ import MaterialReturnModal from '../components/returns/MaterialReturnModal';
 const WorkEntriesPage = () => {
   const { showSuccess, showError } = useToast();
 
-  const [workEntries, setWorkEntries] = useState([]);
-  const [karigars, setKarigars] = useState([]);
-  const [loading, setLoading] = useState(true);
-
   // Filters
   const [searchCustomer, setSearchCustomer] = useState('');
+  const [submittedSearch, setSubmittedSearch] = useState('');
   const [selectedKarigar, setSelectedKarigar] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const karigarsQuery = useApiQuery('/karigars', { staleTime: 30_000 });
+  const workEntriesQuery = useApiQuery('/work-entries', {
+    params: {
+      customer: submittedSearch || undefined,
+      karigar: selectedKarigar !== 'ALL' ? selectedKarigar : undefined,
+      status: selectedStatus !== 'ALL' ? selectedStatus : undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+      limit: 100,
+    },
+    staleTime: 15_000,
+  });
+  const karigars = karigarsQuery.data?.data || [];
+  const workEntries = workEntriesQuery.data?.data || [];
+  const loading = karigarsQuery.isLoading || workEntriesQuery.isLoading;
 
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -43,39 +56,9 @@ const WorkEntriesPage = () => {
   const [entryToCancel, setEntryToCancel] = useState(null);
   const [entryForReturn, setEntryForReturn] = useState(null);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [kRes, wRes] = await Promise.all([
-        api.get('/karigars'),
-        api.get('/work-entries', {
-          params: {
-            customer: searchCustomer.trim() || undefined,
-            karigar: selectedKarigar !== 'ALL' ? selectedKarigar : undefined,
-            status: selectedStatus !== 'ALL' ? selectedStatus : undefined,
-            startDate: startDate || undefined,
-            endDate: endDate || undefined,
-            limit: 100,
-          },
-        }),
-      ]);
-
-      if (kRes.data?.success) setKarigars(kRes.data.data);
-      if (wRes.data?.success) setWorkEntries(wRes.data.data);
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [selectedKarigar, selectedStatus, startDate, endDate]);
-
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchData();
+    setSubmittedSearch(searchCustomer.trim());
   };
 
   return (
@@ -118,7 +101,10 @@ const WorkEntriesPage = () => {
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={selectedKarigar}
-            onChange={(e) => setSelectedKarigar(e.target.value)}
+            onChange={(e) => {
+              setSubmittedSearch(searchCustomer.trim());
+              setSelectedKarigar(e.target.value);
+            }}
             className="px-3 py-2 rounded-xl border border-surface-border text-xs sm:text-sm font-medium focus:outline-none focus:border-primary-500 bg-white"
           >
             <option value="ALL">All Technicians</option>
@@ -132,7 +118,10 @@ const WorkEntriesPage = () => {
           {/* Status Filter */}
           <select
             value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
+            onChange={(e) => {
+              setSubmittedSearch(searchCustomer.trim());
+              setSelectedStatus(e.target.value);
+            }}
             className="px-3 py-2 rounded-xl border border-surface-border text-xs sm:text-sm font-medium focus:outline-none focus:border-primary-500 bg-white"
           >
             <option value="ALL">All Statuses</option>
@@ -145,14 +134,20 @@ const WorkEntriesPage = () => {
           <input
             type="date"
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={(e) => {
+              setSubmittedSearch(searchCustomer.trim());
+              setStartDate(e.target.value);
+            }}
             className="px-2.5 py-2 rounded-xl border border-surface-border text-xs font-medium focus:outline-none focus:border-primary-500"
             title="Start Date"
           />
           <input
             type="date"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={(e) => {
+              setSubmittedSearch(searchCustomer.trim());
+              setEndDate(e.target.value);
+            }}
             className="px-2.5 py-2 rounded-xl border border-surface-border text-xs font-medium focus:outline-none focus:border-primary-500"
             title="End Date"
           />
@@ -322,7 +317,6 @@ const WorkEntriesPage = () => {
       <WorkEntryModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={fetchData}
       />
 
       <WorkDetailModal
@@ -336,14 +330,12 @@ const WorkEntriesPage = () => {
         isOpen={!!entryToCancel}
         onClose={() => setEntryToCancel(null)}
         workEntry={entryToCancel}
-        onSuccess={fetchData}
       />
 
       <MaterialReturnModal
         isOpen={!!entryForReturn}
         onClose={() => setEntryForReturn(null)}
         preselectedWorkEntry={entryForReturn}
-        onSuccess={fetchData}
       />
     </div>
   );

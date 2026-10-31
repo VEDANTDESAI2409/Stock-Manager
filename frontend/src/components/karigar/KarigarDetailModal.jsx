@@ -1,26 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Modal from '../common/Modal';
 import Badge from '../common/Badge';
-import api from '../../services/api';
+import useApiQuery from '../../services/useApiQuery';
 import { User, Phone, MapPin, Calendar, Briefcase, RotateCcw, AlertTriangle } from 'lucide-react';
 
 const KarigarDetailModal = ({ isOpen, onClose, karigarId }) => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('materials'); // 'materials' | 'work' | 'returns' | 'attendance'
-
-  useEffect(() => {
-    if (karigarId && isOpen) {
-      setLoading(true);
-      api
-        .get(`/karigars/${karigarId}`)
-        .then((res) => {
-          if (res.data?.success) setData(res.data.data);
-        })
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    }
-  }, [karigarId, isOpen]);
+  const karigarQuery = useApiQuery(`/karigars/${karigarId || ''}`, {
+    enabled: Boolean(karigarId && isOpen),
+    staleTime: 15_000,
+  });
+  const data = karigarQuery.data?.data;
+  const loading = karigarQuery.isLoading;
 
   if (!isOpen) return null;
 

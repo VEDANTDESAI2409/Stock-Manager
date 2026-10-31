@@ -31,7 +31,7 @@ const CancelWorkModal = ({ isOpen, onClose, workEntry, onSuccess }) => {
       });
       showSuccess(`Work Order ${workEntry.workOrderNumber} was cancelled and stock has been restored.`);
       setReason('');
-      onSuccess();
+      onSuccess?.();
       onClose();
     } catch (err) {
       showError(err.message);

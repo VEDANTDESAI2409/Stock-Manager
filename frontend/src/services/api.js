@@ -1,4 +1,5 @@
 import axios from 'axios';
+import queryClient from './queryClient';
 
 const apiOrigin = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '') || '';
 
@@ -9,6 +10,56 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+const invalidateForMutation = (url = '') => {
+  const path = url.split('?')[0];
+  const resourcePrefixes = [
+    {
+      match: /^\/(products|categories)(\/|$)/,
+      keys: ['products', 'categories', 'reports/dashboard', 'reports/stock-history'],
+    },
+    {
+      match: /^\/karigars(\/|$)/,
+      keys: ['karigars', 'attendance', 'reports/dashboard', 'reports/karigar-materials'],
+    },
+    {
+      match: /^\/work-entries(\/|$)/,
+      keys: [
+        'work-entries',
+        'products',
+        'reports/dashboard',
+        'reports/stock-history',
+        'reports/karigar-materials',
+        'reports/customer-work',
+      ],
+    },
+    {
+      match: /^\/returns(\/|$)/,
+      keys: [
+        'returns',
+        'work-entries',
+        'products',
+        'reports/dashboard',
+        'reports/stock-history',
+        'reports/karigar-materials',
+        'reports/customer-work',
+      ],
+    },
+    {
+      match: /^\/attendance(\/|$)/,
+      keys: ['attendance', 'reports/dashboard'],
+    },
+    {
+      match: /^\/settings(\/|$)/,
+      keys: ['settings'],
+    },
+  ];
+
+  const matched = resourcePrefixes.find(({ match }) => match.test(path));
+  matched?.keys.forEach((key) => {
+    queryClient.invalidateQueries({ queryKey: ['api', key] });
+  });
+};
 
 // Attach Authorization Bearer token from localStorage as fallback
 api.interceptors.request.use(
@@ -24,7 +75,13 @@ api.interceptors.request.use(
 
 // Response interceptor to format errors and handle 401
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const method = response.config.method?.toLowerCase();
+    if (method && method !== 'get' && method !== 'head' && method !== 'options') {
+      invalidateForMutation(response.config.url);
+    }
+    return response;
+  },
   (error) => {
     const message =
       error.response?.data?.message ||

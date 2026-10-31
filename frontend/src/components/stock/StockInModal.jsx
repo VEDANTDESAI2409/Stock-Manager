@@ -43,7 +43,7 @@ const StockInModal = ({ isOpen, onClose, products, preselectedProduct, onSuccess
       showSuccess(`Added ${quantity} ${selectedProduct?.unit || 'units'} to ${selectedProduct?.name}.`);
       setQuantity(1);
       setNotes('');
-      onSuccess();
+      onSuccess?.();
       onClose();
     } catch (err) {
       showError(err.message);

@@ -1,63 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import api from '../../services/api';
+import useApiQuery from '../../services/useApiQuery';
 import { useToast } from '../../context/ToastContext';
 import { RotateCcw, AlertCircle, ArrowRight } from 'lucide-react';
 
 const MaterialReturnModal = ({ isOpen, onClose, preselectedWorkEntry, onSuccess }) => {
   const { showSuccess, showError } = useToast();
-  const [activeWorkEntries, setActiveWorkEntries] = useState([]);
   const [selectedWorkId, setSelectedWorkId] = useState('');
   const [workDetails, setWorkDetails] = useState(null);
   const [returnItems, setReturnItems] = useState([]); // [{ product, productName, unit, remainingQuantity, returnQty: 0 }]
   const [returnDate, setReturnDate] = useState(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
-  const [fetchingItems, setFetchingItems] = useState(false);
+  const activeWorkQuery = useApiQuery('/work-entries', {
+    params: { status: 'ACTIVE', limit: 100 },
+    enabled: isOpen,
+    staleTime: 10_000,
+  });
+  const workItemsQuery = useApiQuery(
+    `/returns/work-entry/${selectedWorkId || ''}/items`,
+    { enabled: Boolean(selectedWorkId && isOpen), staleTime: 5_000 }
+  );
+  const activeWorkEntries = activeWorkQuery.data?.data || [];
+  const fetchingItems = workItemsQuery.isLoading;
 
   useEffect(() => {
-    if (isOpen) {
-      // Fetch active work orders
-      api
-        .get('/work-entries?status=ACTIVE&limit=100')
-        .then((res) => {
-          if (res.data?.success) {
-            setActiveWorkEntries(res.data.data);
-            if (preselectedWorkEntry) {
-              setSelectedWorkId(preselectedWorkEntry._id);
-            } else if (res.data.data.length > 0 && !selectedWorkId) {
-              setSelectedWorkId(res.data.data[0]._id);
-            }
-          }
-        })
-        .catch(console.error);
+    if (isOpen && activeWorkQuery.data?.success) {
+      if (preselectedWorkEntry) {
+        setSelectedWorkId(preselectedWorkEntry._id);
+      } else if (activeWorkEntries.length > 0 && !selectedWorkId) {
+        setSelectedWorkId(activeWorkEntries[0]._id);
+      }
     }
-  }, [isOpen, preselectedWorkEntry]);
+  }, [isOpen, activeWorkQuery.dataUpdatedAt, preselectedWorkEntry, selectedWorkId]);
 
-  // When selected work order changes, fetch returnable items
   useEffect(() => {
-    if (selectedWorkId && isOpen) {
-      setFetchingItems(true);
-      api
-        .get(`/returns/work-entry/${selectedWorkId}/items`)
-        .then((res) => {
-          if (res.data?.success) {
-            setWorkDetails(res.data.data.workEntry);
-            const items = res.data.data.items.map((item) => ({
-              ...item,
-              returnQty: 0,
-            }));
-            setReturnItems(items);
-          }
-        })
-        .catch((err) => {
-          showError(err.message);
-          setWorkDetails(null);
-          setReturnItems([]);
-        })
-        .finally(() => setFetchingItems(false));
+    if (workItemsQuery.data?.success) {
+      setWorkDetails(workItemsQuery.data.data.workEntry);
+      setReturnItems(workItemsQuery.data.data.items.map((item) => ({ ...item, returnQty: 0 })));
     }
-  }, [selectedWorkId, isOpen]);
+  }, [selectedWorkId, workItemsQuery.dataUpdatedAt]);
+
+  useEffect(() => {
+    if (workItemsQuery.error) {
+      showError(workItemsQuery.error.message);
+      setWorkDetails(null);
+      setReturnItems([]);
+    }
+  }, [workItemsQuery.error]);
 
   const updateItemReturnQty = (index, val) => {
     const updated = [...returnItems];
@@ -107,7 +98,7 @@ const MaterialReturnModal = ({ isOpen, onClose, preselectedWorkEntry, onSuccess 
       });
 
       showSuccess(res.data?.message || 'Material return processed successfully.');
-      onSuccess();
+      onSuccess?.();
       onClose();
     } catch (err) {
       showError(err.message);

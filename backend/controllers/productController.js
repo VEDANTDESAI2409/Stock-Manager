@@ -26,21 +26,22 @@ export const getProducts = async (req, res, next) => {
       query.name = { $regex: search.trim(), $options: 'i' };
     }
 
-    let productsQuery = Product.find(query).populate('category', 'name').sort({ name: 1 });
-
-    let products = await productsQuery;
-
-    // Filter low stock in memory if requested
     if (lowStock === 'true' || lowStock === true) {
-      products = products.filter((p) => p.currentStock <= p.minStock);
+      query.$expr = { $lte: ['$currentStock', '$minStock'] };
     }
 
-    const total = products.length;
+    const totalPromise = all === 'true' ? Promise.resolve(null) : Product.countDocuments(query);
+    let productsQuery = Product.find(query)
+      .populate('category', 'name')
+      .sort({ name: 1 });
 
     if (all !== 'true') {
       const skip = (Number(page) - 1) * Number(limit);
-      products = products.slice(skip, skip + Number(limit));
+      productsQuery = productsQuery.skip(skip).limit(Number(limit));
     }
+
+    const [products, totalResult] = await Promise.all([productsQuery, totalPromise]);
+    const total = totalResult ?? products.length;
 
     res.status(200).json({
       success: true,

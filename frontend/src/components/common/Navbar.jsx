@@ -1,35 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Menu, Bell, Search, ShieldAlert, ArrowUpRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
+import useApiQuery from '../../services/useApiQuery';
 
 const Navbar = ({ toggleMobileSidebar }) => {
   const { admin } = useAuth();
   const navigate = useNavigate();
-  const [lowStockCount, setLowStockCount] = useState(0);
-  const [businessName, setBusinessName] = useState('Stock Manager');
-
-  useEffect(() => {
-    const fetchQuickStatus = async () => {
-      try {
-        const [dashRes, setRes] = await Promise.all([
-          api.get('/reports/dashboard').catch(() => null),
-          api.get('/settings').catch(() => null),
-        ]);
-
-        if (dashRes?.data?.success) {
-          setLowStockCount(dashRes.data.data.summary.lowStockProducts || 0);
-        }
-        if (setRes?.data?.success && setRes.data.data.settings?.businessName) {
-          setBusinessName(setRes.data.data.settings.businessName);
-        }
-      } catch (e) {
-        // Silent catch for initial load
-      }
-    };
-    fetchQuickStatus();
-  }, []);
+  const { data: dashboardResponse } = useApiQuery('/reports/dashboard', { staleTime: 15_000 });
+  const { data: settingsResponse } = useApiQuery('/settings', { staleTime: 5 * 60_000 });
+  const lowStockCount = dashboardResponse?.data?.summary?.lowStockProducts || 0;
+  const businessName = settingsResponse?.data?.settings?.businessName || 'Stock Manager';
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 sm:px-6 bg-white/90 backdrop-blur-md border-b border-surface-border">

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Badge from '../components/common/Badge';
 import EmptyState from '../components/common/EmptyState';
 import api from '../services/api';
+import useApiQuery from '../services/useApiQuery';
 import { useToast } from '../context/ToastContext';
 import { exportToCSV } from '../utils/csvExport';
 import {
@@ -21,8 +22,13 @@ const ReportsPage = () => {
   const [activeReportTab, setActiveReportTab] = useState('stock-history'); // 'stock-history' | 'karigar-materials' | 'customer-work'
 
   // Master lists for filters
-  const [products, setProducts] = useState([]);
-  const [karigars, setKarigars] = useState([]);
+  const productsQuery = useApiQuery('/products', {
+    params: { all: 'true' },
+    staleTime: 30_000,
+  });
+  const karigarsQuery = useApiQuery('/karigars', { staleTime: 30_000 });
+  const products = productsQuery.data?.data || [];
+  const karigars = karigarsQuery.data?.data || [];
 
   // Common Filters
   const [startDate, setStartDate] = useState('');
@@ -31,74 +37,40 @@ const ReportsPage = () => {
   const [selectedKarigar, setSelectedKarigar] = useState('ALL');
   const [selectedType, setSelectedType] = useState('ALL');
   const [searchCustomer, setSearchCustomer] = useState('');
-
-  // Report Data
-  const [stockHistoryData, setStockHistoryData] = useState([]);
-  const [karigarMaterialData, setKarigarMaterialData] = useState([]);
-  const [customerWorkData, setCustomerWorkData] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // Initial lookup data
-  useEffect(() => {
-    Promise.all([
-      api.get('/products?all=true'),
-      api.get('/karigars'),
-    ])
-      .then(([pRes, kRes]) => {
-        if (pRes.data?.success) setProducts(pRes.data.data);
-        if (kRes.data?.success) setKarigars(kRes.data.data);
-      })
-      .catch(console.error);
-  }, []);
-
-  // Fetch report data on tab change or filter change
-  const fetchActiveReport = async () => {
-    setLoading(true);
-    try {
-      if (activeReportTab === 'stock-history') {
-        const res = await api.get('/reports/stock-history', {
-          params: {
-            productId: selectedProduct !== 'ALL' ? selectedProduct : undefined,
-            type: selectedType !== 'ALL' ? selectedType : undefined,
-            startDate: startDate || undefined,
-            endDate: endDate || undefined,
-            limit: 200,
-          },
-        });
-        if (res.data?.success) setStockHistoryData(res.data.data);
-      } else if (activeReportTab === 'karigar-materials') {
-        const res = await api.get('/reports/karigar-materials', {
-          params: {
-            karigarId: selectedKarigar !== 'ALL' ? selectedKarigar : undefined,
-            startDate: startDate || undefined,
-            endDate: endDate || undefined,
-          },
-        });
-        if (res.data?.success) setKarigarMaterialData(res.data.data);
-      } else if (activeReportTab === 'customer-work') {
-        const res = await api.get('/reports/customer-work', {
-          params: {
-            search: searchCustomer.trim() || undefined,
-            startDate: startDate || undefined,
-            endDate: endDate || undefined,
-          },
-        });
-        if (res.data?.success) setCustomerWorkData(res.data.data);
+  const [submittedCustomerSearch, setSubmittedCustomerSearch] = useState('');
+  const reportPath = activeReportTab === 'stock-history'
+    ? '/reports/stock-history'
+    : activeReportTab === 'karigar-materials'
+      ? '/reports/karigar-materials'
+      : '/reports/customer-work';
+  const reportParams = activeReportTab === 'stock-history'
+    ? {
+        productId: selectedProduct !== 'ALL' ? selectedProduct : undefined,
+        type: selectedType !== 'ALL' ? selectedType : undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        limit: 200,
       }
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchActiveReport();
-  }, [activeReportTab, selectedProduct, selectedKarigar, selectedType, startDate, endDate]);
+    : activeReportTab === 'karigar-materials'
+      ? {
+          karigarId: selectedKarigar !== 'ALL' ? selectedKarigar : undefined,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+        }
+      : {
+          search: submittedCustomerSearch || undefined,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+        };
+  const reportQuery = useApiQuery(reportPath, { params: reportParams, staleTime: 15_000 });
+  const stockHistoryData = activeReportTab === 'stock-history' ? reportQuery.data?.data || [] : [];
+  const karigarMaterialData = activeReportTab === 'karigar-materials' ? reportQuery.data?.data || [] : [];
+  const customerWorkData = activeReportTab === 'customer-work' ? reportQuery.data?.data || [] : [];
+  const loading = reportQuery.isLoading;
 
   const handleCustomerSearch = (e) => {
     e.preventDefault();
-    fetchActiveReport();
+    setSubmittedCustomerSearch(searchCustomer.trim());
   };
 
   // CSV Exports

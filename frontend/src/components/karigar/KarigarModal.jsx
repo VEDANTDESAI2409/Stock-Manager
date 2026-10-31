@@ -50,7 +50,7 @@ const KarigarModal = ({ isOpen, onClose, karigar, onSuccess }) => {
         await api.post('/karigars', formData);
         showSuccess('New Karigar added successfully.');
       }
-      onSuccess();
+      onSuccess?.();
       onClose();
     } catch (err) {
       showError(err.message);

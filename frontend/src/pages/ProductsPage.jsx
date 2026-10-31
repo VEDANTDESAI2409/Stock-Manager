@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Badge from '../components/common/Badge';
 import EmptyState from '../components/common/EmptyState';
 import ConfirmModal from '../components/common/ConfirmModal';
 import api from '../services/api';
+import useApiQuery from '../services/useApiQuery';
 import { useToast } from '../context/ToastContext';
 import {
   Boxes,
@@ -32,14 +33,22 @@ const ProductsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { showSuccess, showError } = useToast();
 
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-
   // Filters
   const [search, setSearch] = useState('');
+  const [submittedSearch, setSubmittedSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [lowStockOnly, setLowStockOnly] = useState(searchParams.get('lowStock') === 'true');
+  const categoriesQuery = useApiQuery('/categories', { staleTime: 60_000 });
+  const productParams = {
+    search: submittedSearch || undefined,
+    category: selectedCategory !== 'ALL' ? selectedCategory : undefined,
+    lowStock: lowStockOnly ? 'true' : undefined,
+    all: 'true',
+  };
+  const productsQuery = useApiQuery('/products', { params: productParams, staleTime: 20_000 });
+  const categories = categoriesQuery.data?.data || [];
+  const products = productsQuery.data?.data || [];
+  const loading = categoriesQuery.isLoading || productsQuery.isLoading;
 
   // Modal Triggers & Selected Product
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -57,34 +66,9 @@ const ProductsPage = () => {
   const [productToDelete, setProductToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const catRes = await api.get('/categories');
-      if (catRes.data?.success) setCategories(catRes.data.data);
-
-      const params = new URLSearchParams();
-      if (search.trim()) params.append('search', search.trim());
-      if (selectedCategory !== 'ALL') params.append('category', selectedCategory);
-      if (lowStockOnly) params.append('lowStock', 'true');
-      params.append('all', 'true');
-
-      const prodRes = await api.get(`/products?${params.toString()}`);
-      if (prodRes.data?.success) setProducts(prodRes.data.data);
-    } catch (err) {
-      showError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [selectedCategory, lowStockOnly]);
-
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchData();
+    setSubmittedSearch(search.trim());
   };
 
   const handleDeleteProduct = async () => {
@@ -94,7 +78,6 @@ const ProductsPage = () => {
       await api.delete(`/products/${productToDelete._id}`);
       showSuccess(`Product "${productToDelete.name}" deleted successfully.`);
       setProductToDelete(null);
-      fetchData();
     } catch (err) {
       showError(err.message);
     } finally {
@@ -164,7 +147,10 @@ const ProductsPage = () => {
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
+            onChange={(e) => {
+              setSubmittedSearch(search.trim());
+              setSelectedCategory(e.target.value);
+            }}
             className="px-3 py-2 rounded-xl border border-surface-border text-xs sm:text-sm font-medium focus:outline-none focus:border-primary-500 bg-white"
           >
             <option value="ALL">All Categories</option>
@@ -176,7 +162,10 @@ const ProductsPage = () => {
           </select>
 
           <button
-            onClick={() => setLowStockOnly(!lowStockOnly)}
+            onClick={() => {
+              setSubmittedSearch(search.trim());
+              setLowStockOnly(!lowStockOnly);
+            }}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition border ${
               lowStockOnly
                 ? 'bg-amber-500 text-white border-amber-500'
@@ -202,6 +191,7 @@ const ProductsPage = () => {
             actionText="Clear Filters"
             onAction={() => {
               setSearch('');
+              setSubmittedSearch('');
               setSelectedCategory('ALL');
               setLowStockOnly(false);
             }}
@@ -367,7 +357,6 @@ const ProductsPage = () => {
         onClose={() => setIsProductModalOpen(false)}
         product={editingProduct}
         categories={categories}
-        onSuccess={fetchData}
       />
 
       <StockInModal
@@ -375,7 +364,6 @@ const ProductsPage = () => {
         onClose={() => setIsStockInOpen(false)}
         products={products}
         preselectedProduct={activeModalProduct}
-        onSuccess={fetchData}
       />
 
       <StockOutModal
@@ -383,7 +371,6 @@ const ProductsPage = () => {
         onClose={() => setIsStockOutOpen(false)}
         products={products}
         preselectedProduct={activeModalProduct}
-        onSuccess={fetchData}
       />
 
       <StockAdjustModal
@@ -391,14 +378,12 @@ const ProductsPage = () => {
         onClose={() => setIsStockAdjustOpen(false)}
         products={products}
         preselectedProduct={activeModalProduct}
-        onSuccess={fetchData}
       />
 
       <CategoryManageModal
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}
         categories={categories}
-        onCategoriesUpdated={fetchData}
       />
 
       <ProductDetailModal
