@@ -2,15 +2,13 @@ import React from 'react';
 import { Menu, Bell, Search, ShieldAlert, ArrowUpRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import useApiQuery from '../../services/useApiQuery';
 
 const Navbar = ({ toggleMobileSidebar }) => {
   const { admin } = useAuth();
   const navigate = useNavigate();
   const { data: dashboardResponse } = useApiQuery('/reports/dashboard', { staleTime: 15_000 });
-  const { data: settingsResponse } = useApiQuery('/settings', { staleTime: 5 * 60_000 });
   const lowStockCount = dashboardResponse?.data?.summary?.lowStockProducts || 0;
-  const businessName = settingsResponse?.data?.settings?.businessName || 'Stock Manager';
+  const businessName = 'Tanish Technology';
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 sm:px-6 bg-white/90 backdrop-blur-md border-b border-surface-border">

@@ -18,7 +18,7 @@ router.get('/', (req, res) => {
 
   res.status(isHealthy ? 200 : 503).json({
     status: isHealthy ? 'healthy' : 'degraded',
-    service: 'Stock Manager API',
+    service: 'Tanish Technology API',
     timestamp: new Date().toISOString(),
     uptimeSeconds: Math.floor(process.uptime()),
     database: {

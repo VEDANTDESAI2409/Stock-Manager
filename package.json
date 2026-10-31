@@ -1,8 +1,8 @@
 {
-  "name": "stock-manager-root",
+  "name": "tanish-technology",
   "version": "1.0.0",
   "private": true,
-  "description": "CCTV Stock & Karigar Management System",
+  "description": "Tanish Technology business management system",
   "scripts": {
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "dev": "concurrently -n \"backend,frontend\" -c \"blue,green\" \"npm run dev:backend\" \"npm run dev:frontend\"",

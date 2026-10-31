@@ -75,8 +75,8 @@ const SettingsPage = () => {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    if (newPassword.length < 6) {
-      showError('New password must be at least 6 characters.');
+    if (newPassword.length < 12) {
+      showError('New password must be at least 12 characters.');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -152,7 +152,7 @@ const SettingsPage = () => {
                   required
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder="e.g. VisionSafe CCTV & Security Solutions"
+                  placeholder="Tanish Technology"
                   className="w-full px-3 py-2 rounded-xl border border-surface-border text-xs sm:text-sm font-medium focus:outline-none focus:border-primary-500"
                 />
               </div>
@@ -178,7 +178,7 @@ const SettingsPage = () => {
                   type="email"
                   value={businessEmail}
                   onChange={(e) => setBusinessEmail(e.target.value)}
-                  placeholder="e.g. info@visionsafecctv.com"
+                  placeholder="Business email"
                   className="w-full px-3 py-2 rounded-xl border border-surface-border text-xs sm:text-sm font-medium focus:outline-none focus:border-primary-500"
                 />
               </div>
@@ -244,6 +244,8 @@ const SettingsPage = () => {
                 <input
                   type="email"
                   required
+                  readOnly
+                  title="Managed by the server ADMIN_EMAIL setting"
                   value={profileEmail}
                   onChange={(e) => setProfileEmail(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-surface-border text-xs sm:text-sm font-medium focus:outline-none focus:border-primary-500"
@@ -313,7 +315,7 @@ const SettingsPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-content-secondary uppercase mb-1">
-                  New Password (min 6 chars)
+                  New Password (min 12 chars)
                 </label>
                 <input
                   type="password"

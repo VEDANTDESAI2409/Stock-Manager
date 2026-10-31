@@ -5,8 +5,8 @@ import { useToast } from '../context/ToastContext';
 import { ShieldCheck, Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('admin@stockmanager.com');
-  const [password, setPassword] = useState('Admin@123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -33,11 +33,6 @@ const LoginPage = () => {
     }
   };
 
-  const fillDefaultCredentials = () => {
-    setEmail('admin@stockmanager.com');
-    setPassword('Admin@123456');
-  };
-
   return (
     <div className="min-h-screen bg-surface-bg flex flex-col justify-center py-12 sm:px-6 lg:px-8 px-4 selection:bg-primary-100">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
@@ -46,10 +41,10 @@ const LoginPage = () => {
           <ShieldCheck className="w-8 h-8 text-primary-400" />
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-content-primary tracking-tight">
-          STOCK MANAGER
+          Tanish Technology
         </h2>
         <p className="mt-1 text-sm text-content-secondary font-medium">
-          CCTV Stock & Karigar Management System
+          Business Management System
         </p>
       </div>
 
@@ -76,7 +71,6 @@ const LoginPage = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@stockmanager.com"
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-surface-border focus:outline-none focus:border-primary-500 text-sm font-medium transition"
                 />
               </div>
@@ -95,7 +89,6 @@ const LoginPage = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-surface-border focus:outline-none focus:border-primary-500 text-sm font-medium transition"
                 />
                 <button
@@ -124,17 +117,6 @@ const LoginPage = () => {
             </button>
           </form>
 
-          {/* Quick Demo Helper */}
-          <div className="mt-6 pt-5 border-t border-surface-border text-center">
-            <p className="text-xs text-content-secondary mb-2">Default Admin Credentials:</p>
-            <button
-              type="button"
-              onClick={fillDefaultCredentials}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-surface-border text-xs text-primary-700 font-semibold transition"
-            >
-              admin@stockmanager.com / Admin@123456
-            </button>
-          </div>
         </div>
       </div>
     </div>

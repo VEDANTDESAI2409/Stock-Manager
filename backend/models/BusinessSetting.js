@@ -5,22 +5,22 @@ const BusinessSettingSchema = new mongoose.Schema(
     businessName: {
       type: String,
       required: true,
-      default: 'CCTV Security Solutions',
+      default: 'Tanish Technology',
       trim: true,
     },
     contactNumber: {
       type: String,
-      default: '+91 98765 43210',
+      default: '',
       trim: true,
     },
     email: {
       type: String,
-      default: 'contact@cctvsolutions.com',
+      default: '',
       trim: true,
     },
     address: {
       type: String,
-      default: 'Shop No. 12, Electronics Market, Surat, Gujarat',
+      default: '',
       trim: true,
     },
   },

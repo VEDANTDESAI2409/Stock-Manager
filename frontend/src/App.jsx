@@ -1,5 +1,5 @@
-import React, { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
@@ -35,6 +35,28 @@ const PageSuspense = ({ children }) => (
   </Suspense>
 );
 
+const routeTitles = {
+  '/': 'Dashboard',
+  '/login': 'Sign In',
+  '/products': 'Products & Stock',
+  '/work-entries': 'Work Entries',
+  '/material-returns': 'Material Returns',
+  '/karigars': 'Karigars',
+  '/attendance': 'Attendance',
+  '/reports': 'Reports',
+  '/settings': 'Settings',
+};
+
+const DocumentTitle = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    document.title = `${routeTitles[pathname] || 'Page Not Found'} | Tanish Technology`;
+  }, [pathname]);
+
+  return null;
+};
+
 // Protected Route Guard
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -45,7 +67,7 @@ const ProtectedRoute = ({ children }) => {
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-xs font-bold text-content-secondary uppercase tracking-wider">
-            Loading Stock Manager...
+            Loading Tanish Technology...
           </p>
         </div>
       </div>
@@ -77,6 +99,7 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <BrowserRouter>
+      <DocumentTitle />
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
           <AuthProvider>

@@ -11,10 +11,7 @@ export const getSettings = async (req, res, next) => {
     let settings = await BusinessSetting.findOne();
     if (!settings) {
       settings = await BusinessSetting.create({
-        businessName: 'CCTV Security Solutions',
-        contactNumber: '+91 98765 43210',
-        email: 'contact@cctvsolutions.com',
-        address: 'Surat, Gujarat',
+        businessName: 'Tanish Technology',
       });
     }
 

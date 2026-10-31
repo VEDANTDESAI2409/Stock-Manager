@@ -76,7 +76,7 @@ const KarigarModal = ({ isOpen, onClose, karigar, onSuccess }) => {
             required
             value={formData.fullName}
             onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-            placeholder="e.g. Rahul Sharma"
+              placeholder="Enter technician name"
             className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border focus:outline-none focus:border-primary-500 text-sm font-medium"
           />
         </div>
@@ -90,7 +90,7 @@ const KarigarModal = ({ isOpen, onClose, karigar, onSuccess }) => {
               type="text"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="e.g. 98765 43210"
+              placeholder="Enter phone number"
               className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border focus:outline-none focus:border-primary-500 text-sm font-medium"
             />
           </div>

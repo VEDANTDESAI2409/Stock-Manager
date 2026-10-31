@@ -1,4 +1,6 @@
 const API_BASE = 'http://localhost:5000/api';
+const adminEmail = process.env.ADMIN_EMAIL;
+const adminPassword = process.env.ADMIN_PASSWORD;
 const TARGET_PRODUCT_ID = '6ae599f91504b161e9a0e299';
 const TARGET_WO = 'WO-20261031-0001';
 const TARGET_RET = 'RET-20261031-0001';
@@ -24,8 +26,8 @@ const verifyPostRestart = async () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'admin@stockmanager.com',
-        password: 'Admin@123456',
+        email: adminEmail,
+        password: adminPassword,
       }),
     }).then((r) => r.json());
 

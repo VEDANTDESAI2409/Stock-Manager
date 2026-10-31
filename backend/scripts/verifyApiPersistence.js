@@ -1,4 +1,6 @@
 const API_BASE = 'http://localhost:5000/api';
+const adminEmail = process.env.ADMIN_EMAIL;
+const adminPassword = process.env.ADMIN_PASSWORD;
 
 const runApiVerification = async () => {
   console.log('========================================================');
@@ -23,8 +25,8 @@ const runApiVerification = async () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'admin@stockmanager.com',
-        password: 'Admin@123456',
+        email: adminEmail,
+        password: adminPassword,
       }),
     }).then((r) => r.json());
 

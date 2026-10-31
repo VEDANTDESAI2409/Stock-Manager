@@ -1,4 +1,4 @@
-# STOCK MANAGER — CCTV Stock & Karigar Management System
+# Tanish Technology
 
 A simple, modern, robust full-stack management web application designed specifically for CCTV installation businesses. It allows a single administrator to maintain product inventory, issue materials to technicians (Karigars) for customer installation sites, track unused material returns, and manage daily attendance without any complex accounting or billing overhead.
 
@@ -7,7 +7,7 @@ A simple, modern, robust full-stack management web application designed specific
 ## 🚀 Key Features & Business Modules
 
 ### 1. Admin Authentication & Security
-- **Single Administrator Portal**: Dedicated secure login (`admin@stockmanager.com` / `Admin@123456`).
+- **Single Administrator Portal**: Administrator login is provisioned from private server environment variables.
 - **No Public Registration**: Zero unauthorized signups; technicians and customers do not have login accounts.
 - **Security**: JWT authentication, bcrypt password hashing, secure HTTP-only cookies with fallback authorization headers, and brute-force rate limiting on `/api/auth/login`.
 
@@ -67,7 +67,7 @@ A simple, modern, robust full-stack management web application designed specific
 
 | Layer | Technologies |
 | :--- | :--- |
-| **Frontend** | React 18, Vite, Tailwind CSS, React Router DOM v6, Axios, Lucide React, Recharts |
+| **Frontend** | React 18, Vite, Tailwind CSS, React Router DOM v6, TanStack Query, Axios, Lucide React, Recharts |
 | **Backend** | Node.js, Express.js (ES Modules), Mongoose 8 |
 | **Database** | MongoDB Atlas (Cloud) with in-memory replica set fallback for offline dev/tests |
 | **Auth & Security** | JWT, bcryptjs, HTTP-Only Cookies, Helmet, Express Rate Limit |
@@ -77,7 +77,7 @@ A simple, modern, robust full-stack management web application designed specific
 ## 📂 Project Structure
 
 ```text
-Stock-Manager/
+tanish-technology/
 ├── backend/
 │   ├── config/
 │   │   └── db.js                 # Atlas connection + Replica Set fallback
@@ -115,7 +115,8 @@ Stock-Manager/
 │   │   ├── reportRoutes.js
 │   │   └── settingsRoutes.js
 │   ├── scripts/
-│   │   ├── seed.js               # Database seeder
+│   │   ├── provisionAdmin.js     # Environment-based administrator provisioning
+│   │   ├── resetBusinessData.js  # Dry-run-first business-data reset
 │   │   └── testRunner.js         # Automated integration test suite
 │   ├── services/
 │   │   └── stockService.js       # Atomic stock deduction, issue & return logic
@@ -181,17 +182,19 @@ Copy `backend/.env.example` to `backend/.env`:
 ```bash
 cp backend/.env.example backend/.env
 ```
-Default `.env` settings:
+Set these values in `backend/.env` for local development and as private Render environment variables for production:
 ```env
 PORT=5000
 NODE_ENV=development
 MONGODB_URI=
-JWT_SECRET=stock_manager_jwt_secret_key_secure_2026_cctv
-ADMIN_NAME=System Admin
-ADMIN_EMAIL=admin@stockmanager.com
-ADMIN_PASSWORD=Admin@123456
+JWT_SECRET=<generate a unique secret of at least 32 characters>
+ADMIN_NAME=Tanish Technology
+ADMIN_EMAIL=<administrator email>
+ADMIN_PASSWORD=<private password, at least 12 characters>
 CLIENT_URL=http://localhost:5173
 ```
+
+The password is hashed with bcrypt by the existing Admin model. The configured `ADMIN_EMAIL` is the only email accepted by the login endpoint. No demo user or sample business records are created at startup.
 
 > **Note on MongoDB**: If `MONGODB_URI` is left blank, the application automatically boots an internal in-memory replica set for instant local testing and development. To connect your cloud MongoDB Atlas database, see the instructions below.
 
@@ -216,9 +219,21 @@ Or start each service separately:
   ```
 
 ### 4. Admin Sign In
-Open [http://localhost:5173](http://localhost:5173) in your browser:
-- **Email**: `admin@stockmanager.com`
-- **Password**: `Admin@123456`
+Open [http://localhost:5173](http://localhost:5173) and sign in with the administrator values configured privately in the backend environment.
+
+Provision or rotate the configured administrator without creating a second account:
+```bash
+cd backend && npm run provision-admin
+```
+
+### 5. Production Data Reset
+The reset script reports counts by collection and is read-only unless both an explicit execution flag and confirmation variable are provided. It clears only categories, products, stock transactions, karigars, work entries, material returns, and attendance. It preserves administrators and business settings.
+
+```bash
+cd backend && npm run reset:business-data
+```
+
+Review the full dry-run report and obtain explicit approval before any reset. After approval, set `RESET_CONFIRMATION=TANISH_TECHNOLOGY_CLEAR_BUSINESS_DATA` in the shell for one command and run the script with `--execute`. Never print or place administrator passwords in command output or Git.
 
 ---
 
@@ -227,14 +242,14 @@ Open [http://localhost:5173](http://localhost:5173) in your browser:
 To connect your MongoDB Atlas cloud database:
 1. Log in to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
 2. Create a free cluster (e.g., M0 Free Tier).
-3. Under **Security → Database Access**, create a database user (e.g., `stockadmin`) with a secure password and `Read and write to any database` privileges.
+3. Under **Security → Database Access**, create a database user with a secure password and only the required database privileges.
 4. Under **Security → Network Access**, add IP address `0.0.0.0/0` (or your specific server IP) to the whitelist.
 5. In your cluster dashboard, click **Connect → Drivers → Node.js** and copy your connection string.
 6. Open `backend/.env` and paste your URI into `MONGODB_URI`:
    ```env
    MONGODB_URI=mongodb+srv://stockadmin:<your_password>@cluster0.xxxx.mongodb.net/stock_manager?retryWrites=true&w=majority
    ```
-7. Restart the backend service. It will automatically connect to MongoDB Atlas and seed the initial categories, products, and admin account!
+7. Set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `JWT_SECRET` privately in the backend environment, then restart the backend. Startup provisions only the configured admin; it does not add sample records.
 
 ---
 
@@ -252,7 +267,7 @@ cd backend && npm test
 ### Test Suite Execution Output:
 ```text
 ====================================================
- STARTING STOCK MANAGER AUTOMATED INTEGRATION TESTS
+ STARTING TANISH TECHNOLOGY AUTOMATED INTEGRATION TESTS
 ====================================================
 
 --- TEST GROUP 1: AUTHENTICATION & SECURITY ---
@@ -297,7 +312,7 @@ cd backend && npm test
 Before deploying this application to production:
 1. Provide your production **MongoDB Atlas Connection String** in `backend/.env`.
 2. Generate a long, random **JWT Secret** for `JWT_SECRET`.
-3. Change the initial admin credentials in `ADMIN_EMAIL` and `ADMIN_PASSWORD` (or update through the Settings page after login).
+3. Configure `ADMIN_EMAIL` and `ADMIN_PASSWORD` privately in Render. Provisioning hashes the password and restricts login to that configured email.
 4. Set `NODE_ENV=production` in `backend/.env`.
 5. Set `CLIENT_URL` to your production frontend domain to ensure CORS and HTTP-only cookie security.
 6. Run `npm run build` to generate optimized production static assets in `frontend/dist`.

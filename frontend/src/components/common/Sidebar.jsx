@@ -59,10 +59,10 @@ const Sidebar = ({ isMobileOpen, closeMobileSidebar }) => {
             </div>
             <div>
               <span className="text-base font-extrabold tracking-tight text-white block leading-none">
-                STOCK MANAGER
+                Tanish Technology
               </span>
               <span className="text-[10px] uppercase tracking-wider font-semibold text-primary-300 block mt-1">
-                CCTV Business Suite
+                Business Management
               </span>
             </div>
           </div>

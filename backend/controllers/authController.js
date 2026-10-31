@@ -4,7 +4,7 @@ import Admin from '../models/Admin.js';
 const generateToken = (id) => {
   return jwt.sign(
     { id },
-    process.env.JWT_SECRET || 'stock_manager_jwt_secret_key_secure_2026_cctv',
+    process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
 };
@@ -52,7 +52,16 @@ export const login = async (req, res, next) => {
       });
     }
 
-    const admin = await Admin.findOne({ email: email.toLowerCase().trim() }).select('+password');
+    const configuredAdminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    const normalizedEmail = email.toLowerCase().trim();
+    if (!configuredAdminEmail || normalizedEmail !== configuredAdminEmail) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password.',
+      });
+    }
+
+    const admin = await Admin.findOne({ email: normalizedEmail }).select('+password');
     if (!admin) {
       return res.status(401).json({
         success: false,
@@ -120,6 +129,16 @@ export const logout = async (req, res) => {
 export const updateProfile = async (req, res, next) => {
   try {
     const { name, email } = req.body;
+    const configuredAdminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    const normalizedEmail = email?.toLowerCase().trim();
+
+    if (normalizedEmail && normalizedEmail !== configuredAdminEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Administrator email is managed by the server ADMIN_EMAIL setting.',
+      });
+    }
+
     const admin = await Admin.findById(req.admin._id);
 
     if (!admin) {
@@ -127,14 +146,6 @@ export const updateProfile = async (req, res, next) => {
     }
 
     if (name) admin.name = name.trim();
-    if (email && email.toLowerCase() !== admin.email) {
-      const emailExists = await Admin.findOne({ email: email.toLowerCase().trim() });
-      if (emailExists) {
-        return res.status(400).json({ success: false, message: 'Email already in use' });
-      }
-      admin.email = email.toLowerCase().trim();
-    }
-
     await admin.save();
 
     res.status(200).json({
@@ -168,10 +179,10 @@ export const changePassword = async (req, res, next) => {
       });
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 12) {
       return res.status(400).json({
         success: false,
-        message: 'New password must be at least 6 characters.',
+        message: 'New password must be at least 12 characters.',
       });
     }
 

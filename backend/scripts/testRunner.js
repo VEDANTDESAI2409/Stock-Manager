@@ -32,26 +32,36 @@ const assert = (condition, testName) => {
 };
 
 const runAllTests = async () => {
+  if (process.env.NODE_ENV !== 'test' || process.env.MONGODB_URI) {
+    throw new Error('Integration tests require NODE_ENV=test and no MONGODB_URI; they use an isolated in-memory database.');
+  }
+
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminEmail || !adminPassword) {
+    throw new Error('Set ADMIN_EMAIL and ADMIN_PASSWORD for the isolated integration test run.');
+  }
+
   console.log('====================================================');
-  console.log(' STARTING STOCK MANAGER AUTOMATED INTEGRATION TESTS');
+  console.log(' STARTING TANISH TECHNOLOGY AUTOMATED INTEGRATION TESTS');
   console.log('====================================================\n');
 
   try {
     await connectDB();
 
     // Ensure database has admin and test products if running in clean in-memory instance
-    let admin = await Admin.findOne({ email: 'admin@stockmanager.com' }).select('+password');
+    let admin = await Admin.findOne({ email: adminEmail }).select('+password');
     if (!admin) {
       console.log('Seeding initial test records for in-memory instance...');
       admin = await Admin.create({
         name: 'Stock Administrator',
-        email: 'admin@stockmanager.com',
-        password: 'Admin@123456',
+        email: adminEmail,
+        password: adminPassword,
       });
-      let testKarigar = await Karigar.findOne({ fullName: 'Rahul Sharma' });
+      let testKarigar = await Karigar.findOne({ fullName: 'Test Technician' });
       if (!testKarigar) {
         await Karigar.create({
-          fullName: 'Rahul Sharma',
+          fullName: 'Test Technician',
           phone: '9876543211',
           status: 'ACTIVE',
         });
@@ -74,10 +84,10 @@ const runAllTests = async () => {
 
     // TEST 1: Admin credentials validation
     console.log('--- TEST GROUP 1: AUTHENTICATION & SECURITY ---');
-    admin = await Admin.findOne({ email: 'admin@stockmanager.com' }).select('+password');
+    admin = await Admin.findOne({ email: adminEmail }).select('+password');
     assert(admin !== null, 'Admin account exists in database');
 
-    const validPass = await admin.comparePassword('Admin@123456');
+    const validPass = await admin.comparePassword(adminPassword);
     assert(validPass === true, 'Admin password matches bcrypt hash');
 
     const invalidPass = await admin.comparePassword('WrongPassword123');

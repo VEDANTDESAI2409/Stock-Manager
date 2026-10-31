@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import connectDB from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
-import { seedDatabase } from './scripts/seed.js';
+import { provisionAdmin, validateAdminConfig } from './scripts/provisionAdmin.js';
 
 // Route imports
 import healthRoutes from './routes/healthRoutes.js';
@@ -24,6 +24,9 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET must be configured with at least 32 characters before starting the API.');
+}
 const allowedOrigins = [
   process.env.CLIENT_URL,
   'https://stock-manager-two-teal.vercel.app',
@@ -68,7 +71,7 @@ app.use('/api/settings', settingsRoutes);
 // Root sanity endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Stock Manager API is operational',
+    message: 'Tanish Technology API is operational',
     docs: '/api/health',
   });
 });
@@ -80,11 +83,12 @@ app.use(errorHandler);
 // Start server after connecting to database
 const startServer = async () => {
   try {
+    validateAdminConfig();
     await connectDB();
-    await seedDatabase();
+    await provisionAdmin();
     const server = app.listen(PORT, () => {
       console.log(`===============================================`);
-      console.log(` Stock Manager API running on port ${PORT}`);
+      console.log(` Tanish Technology API running on port ${PORT}`);
       console.log(` Health Check: http://localhost:${PORT}/api/health`);
       console.log(`===============================================`);
     });

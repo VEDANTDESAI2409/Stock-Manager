@@ -77,10 +77,10 @@ const DashboardPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-content-primary tracking-tight">
-            Dashboard Overview
+            Tanish Technology
           </h1>
           <p className="text-xs sm:text-sm text-content-secondary mt-0.5">
-            CCTV hardware inventory, technician material allocations & daily attendance
+            Dashboard overview for inventory, work, returns, and attendance
           </p>
         </div>
 

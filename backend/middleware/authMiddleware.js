@@ -24,14 +24,15 @@ export const protect = async (req, res, next) => {
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'stock_manager_jwt_secret_key_secure_2026_cctv'
+      process.env.JWT_SECRET
     );
 
     const admin = await Admin.findById(decoded.id).select('-password');
-    if (!admin) {
+    const configuredAdminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    if (!admin || !configuredAdminEmail || admin.email !== configuredAdminEmail) {
       return res.status(401).json({
         success: false,
-        message: 'Admin account not found or has been revoked.',
+        message: 'Administrator account is not authorized.',
       });
     }
 

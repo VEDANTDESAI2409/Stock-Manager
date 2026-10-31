@@ -191,7 +191,7 @@ const WorkEntryModal = ({ isOpen, onClose, onSuccess }) => {
                 required
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="e.g. XYZ Diamond Workshop / Rajeshbhai Shah"
+                  placeholder="Customer or business name"
                 className="w-full px-3 py-2 rounded-xl border border-surface-border focus:outline-none focus:border-primary-500 text-sm font-medium bg-white"
               />
             </div>
