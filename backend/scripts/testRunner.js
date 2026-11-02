@@ -16,6 +16,7 @@ import {
   recordMaterialReturn,
   cancelWorkEntry,
 } from '../services/stockService.js';
+import { createProduct, getProductById, updateProduct } from '../controllers/productController.js';
 
 let passedTests = 0;
 let totalTests = 0;
@@ -29,6 +30,28 @@ const assert = (condition, testName) => {
     console.error(`❌ FAILED: ${testName}`);
     throw new Error(`Assertion failed for: ${testName}`);
   }
+};
+
+const callController = async (controller, req) => {
+  let statusCode;
+  let response;
+  await controller(
+    req,
+    {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json(body) {
+        response = body;
+        return this;
+      },
+    },
+    (err) => {
+      throw err;
+    }
+  );
+  return { statusCode, response };
 };
 
 const runAllTests = async () => {
@@ -97,6 +120,43 @@ const runAllTests = async () => {
     console.log('\n--- TEST GROUP 2: INVENTORY & STOCK OPERATIONS ---');
     let testProduct = await Product.findOne({ name: '2MP HD Dome Camera (IR 20m)' });
     assert(testProduct !== null, 'Found target test product');
+
+    console.log('\n--- TEST GROUP 2A: PRODUCT MODEL NUMBER ---');
+    const modelNumberExamples = [
+      'DS-2CD1023G0-I',
+      'CAM/2026_001',
+      '12345678901234567890',
+      'ABC-01/X.2',
+    ];
+    const modelNumberProductIds = [];
+    for (const [index, modelNumber] of modelNumberExamples.entries()) {
+      const created = await callController(createProduct, {
+        body: {
+          name: `Model Number Test ${index + 1}`,
+          modelNumber,
+          category: testProduct.category,
+        },
+      });
+      assert(created.statusCode === 201, `Create API accepts model number: ${modelNumber}`);
+      assert(created.response.data.modelNumber === modelNumber, `Create API preserves model number: ${modelNumber}`);
+
+      const productId = created.response.data._id;
+      modelNumberProductIds.push(productId);
+      const updated = await callController(updateProduct, {
+        params: { id: productId },
+        body: { modelNumber },
+      });
+      assert(updated.statusCode === 200, `Update API accepts model number: ${modelNumber}`);
+
+      const retrieved = await callController(getProductById, {
+        params: { id: productId },
+      });
+      assert(
+        retrieved.response.data.product.modelNumber === modelNumber,
+        `Product retrieval preserves model number: ${modelNumber}`
+      );
+    }
+    await Product.deleteMany({ _id: { $in: modelNumberProductIds } });
 
     const stockBeforeIn = testProduct.currentStock;
     await recordStockIn({ productId: testProduct._id, quantity: 10, notes: 'Automated Test Stock In' });

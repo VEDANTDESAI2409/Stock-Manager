@@ -8,6 +8,9 @@ const ProductSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
+    modelNumber: {
+      type: String,
+    },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',
@@ -59,4 +62,3 @@ ProductSchema.index({ name: 'text', description: 'text' });
 ProductSchema.index({ category: 1, currentStock: 1 });
 
 export default mongoose.models.Product || mongoose.model('Product', ProductSchema);
-

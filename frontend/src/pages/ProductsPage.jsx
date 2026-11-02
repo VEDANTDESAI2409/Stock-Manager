@@ -223,6 +223,11 @@ const ProductsPage = () => {
                         >
                           {prod.name}
                         </span>
+                        {typeof prod.modelNumber === 'string' && prod.modelNumber !== '' && (
+                          <span className="text-[11px] text-content-muted block mt-0.5 whitespace-pre-wrap break-all">
+                            Model: {prod.modelNumber}
+                          </span>
+                        )}
                         {prod.description && (
                           <span className="text-[11px] text-content-muted block truncate max-w-xs mt-0.5">
                             {prod.description}

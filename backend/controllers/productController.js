@@ -92,7 +92,7 @@ export const getProductById = async (req, res, next) => {
  */
 export const createProduct = async (req, res, next) => {
   try {
-    const { name, category, unit, initialStock = 0, minStock = 5, description } = req.body;
+    const { name, modelNumber, category, unit, initialStock = 0, minStock = 5, description } = req.body;
 
     if (!name || !category) {
       return res.status(400).json({
@@ -106,6 +106,7 @@ export const createProduct = async (req, res, next) => {
 
     const product = await Product.create({
       name: name.trim(),
+      modelNumber,
       category,
       unit: unit || 'Piece',
       currentStock: initStockNum,
@@ -140,13 +141,13 @@ export const createProduct = async (req, res, next) => {
 };
 
 /**
- * @desc    Update product metadata (Name, Category, Unit, Min Stock, Description)
+ * @desc    Update product metadata (Name, Model Number, Category, Unit, Min Stock, Description)
  * @route   PUT /api/products/:id
  * @access  Private
  */
 export const updateProduct = async (req, res, next) => {
   try {
-    const { name, category, unit, minStock, description } = req.body;
+    const { name, modelNumber, category, unit, minStock, description } = req.body;
 
     const product = await Product.findById(req.params.id);
     if (!product) {
@@ -154,6 +155,7 @@ export const updateProduct = async (req, res, next) => {
     }
 
     if (name) product.name = name.trim();
+    if (modelNumber !== undefined) product.modelNumber = modelNumber;
     if (category) product.category = category;
     if (unit) product.unit = unit;
     if (minStock !== undefined) product.minStock = Math.max(0, Number(minStock) || 0);
@@ -278,4 +280,3 @@ export const stockAdjustment = async (req, res, next) => {
     next(err);
   }
 };
-

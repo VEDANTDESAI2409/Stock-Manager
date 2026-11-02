@@ -7,6 +7,7 @@ const ProductFormModal = ({ isOpen, onClose, product, categories, onSuccess }) =
   const { showSuccess, showError } = useToast();
   const [formData, setFormData] = useState({
     name: '',
+    modelNumber: '',
     category: '',
     unit: 'Piece',
     initialStock: 0,
@@ -19,6 +20,7 @@ const ProductFormModal = ({ isOpen, onClose, product, categories, onSuccess }) =
     if (product) {
       setFormData({
         name: product.name || '',
+        modelNumber: product.modelNumber ?? '',
         category: product.category?._id || product.category || '',
         unit: product.unit || 'Piece',
         initialStock: product.currentStock || 0,
@@ -28,6 +30,7 @@ const ProductFormModal = ({ isOpen, onClose, product, categories, onSuccess }) =
     } else {
       setFormData({
         name: '',
+        modelNumber: '',
         category: categories.length > 0 ? categories[0]._id : '',
         unit: 'Piece',
         initialStock: 0,
@@ -54,6 +57,7 @@ const ProductFormModal = ({ isOpen, onClose, product, categories, onSuccess }) =
         // Edit existing product
         await api.put(`/products/${product._id}`, {
           name: formData.name,
+          modelNumber: formData.modelNumber,
           category: formData.category,
           unit: formData.unit,
           minStock: Number(formData.minStock),
@@ -64,6 +68,7 @@ const ProductFormModal = ({ isOpen, onClose, product, categories, onSuccess }) =
         // Create new product
         await api.post('/products', {
           name: formData.name,
+          modelNumber: formData.modelNumber,
           category: formData.category,
           unit: formData.unit,
           initialStock: Number(formData.initialStock),
@@ -99,6 +104,18 @@ const ProductFormModal = ({ isOpen, onClose, product, categories, onSuccess }) =
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g. 2MP HD Dome Camera (IR 20m)"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border focus:outline-none focus:border-primary-500 text-sm font-medium"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-content-secondary uppercase mb-1.5">
+            Model Number
+          </label>
+          <input
+            type="text"
+            value={formData.modelNumber}
+            onChange={(e) => setFormData({ ...formData, modelNumber: e.target.value })}
             className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border focus:outline-none focus:border-primary-500 text-sm font-medium"
           />
         </div>
@@ -206,4 +223,3 @@ const ProductFormModal = ({ isOpen, onClose, product, categories, onSuccess }) =
 };
 
 export default ProductFormModal;
-

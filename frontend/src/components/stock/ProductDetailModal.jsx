@@ -70,6 +70,13 @@ const ProductDetailModal = ({ isOpen, onClose, productId }) => {
             </div>
           </div>
 
+          {typeof product.modelNumber === 'string' && product.modelNumber !== '' && (
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-surface-border text-xs text-content-secondary whitespace-pre-wrap break-all">
+              <span className="font-bold text-content-primary block mb-0.5">Model Number:</span>
+              {product.modelNumber}
+            </div>
+          )}
+
           {product.description && (
             <div className="p-3.5 rounded-xl bg-slate-50 border border-surface-border text-xs text-content-secondary">
               <span className="font-bold text-content-primary block mb-0.5">Description:</span>
@@ -150,4 +157,3 @@ const ProductDetailModal = ({ isOpen, onClose, productId }) => {
 };
 
 export default ProductDetailModal;
-
