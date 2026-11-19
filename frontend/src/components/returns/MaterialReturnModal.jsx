@@ -9,6 +9,7 @@ const MaterialReturnModal = ({ isOpen, onClose, preselectedWorkEntry, onSuccess 
   const { showSuccess, showError } = useToast();
   const [selectedWorkId, setSelectedWorkId] = useState('');
   const [workDetails, setWorkDetails] = useState(null);
+  const [selectedReturningKarigarId, setSelectedReturningKarigarId] = useState('');
   const [returnItems, setReturnItems] = useState([]); // [{ product, productName, unit, remainingQuantity, returnQty: 0 }]
   const [returnDate, setReturnDate] = useState(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState('');
@@ -37,7 +38,15 @@ const MaterialReturnModal = ({ isOpen, onClose, preselectedWorkEntry, onSuccess 
 
   useEffect(() => {
     if (workItemsQuery.data?.success) {
-      setWorkDetails(workItemsQuery.data.data.workEntry);
+      const entry = workItemsQuery.data.data.workEntry;
+      setWorkDetails(entry);
+      const assigned =
+        entry?.karigars && entry.karigars.length > 0
+          ? entry.karigars
+          : entry?.karigar
+          ? [entry.karigar]
+          : [];
+      setSelectedReturningKarigarId(assigned[0]?._id || '');
       setReturnItems(workItemsQuery.data.data.items.map((item) => ({ ...item, returnQty: 0 })));
     }
   }, [selectedWorkId, workItemsQuery.dataUpdatedAt]);
@@ -91,7 +100,7 @@ const MaterialReturnModal = ({ isOpen, onClose, preselectedWorkEntry, onSuccess 
     try {
       const res = await api.post('/returns', {
         workEntryId: selectedWorkId,
-        karigarId: workDetails?.karigar?._id,
+        karigarId: selectedReturningKarigarId || workDetails?.karigar?._id,
         returnDate,
         notes: notes.trim(),
         items: itemsToReturn,
@@ -128,11 +137,20 @@ const MaterialReturnModal = ({ isOpen, onClose, preselectedWorkEntry, onSuccess 
             className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border focus:outline-none focus:border-primary-500 text-sm font-medium bg-white"
           >
             <option value="">Choose active work order...</option>
-            {activeWorkEntries.map((w) => (
-              <option key={w._id} value={w._id}>
-                {w.workOrderNumber} — {w.customerName} (Karigar: {w.karigar?.fullName})
-              </option>
-            ))}
+            {activeWorkEntries.map((w) => {
+              const assigned =
+                w.karigars && w.karigars.length > 0
+                  ? w.karigars
+                  : w.karigar
+                  ? [w.karigar]
+                  : [];
+              const techNames = assigned.map((k) => k.fullName).join(', ');
+              return (
+                <option key={w._id} value={w._id}>
+                  {w.workOrderNumber} — {w.customerName} (Tech: {techNames || 'Unassigned'})
+                </option>
+              );
+            })}
           </select>
         </div>
 
@@ -144,12 +162,42 @@ const MaterialReturnModal = ({ isOpen, onClose, preselectedWorkEntry, onSuccess 
               <span className="font-bold text-content-primary text-sm">{workDetails.customerName}</span>
               <span className="text-content-muted block text-[11px]">{workDetails.customerAddress}</span>
             </div>
-            <div>
-              <span className="text-content-secondary block">Assigned Technician:</span>
-              <span className="font-bold text-content-primary text-sm">
-                {workDetails.karigar?.fullName || 'Technician'}
-              </span>
-            </div>
+            {(() => {
+              const assigned =
+                workDetails.karigars && workDetails.karigars.length > 0
+                  ? workDetails.karigars
+                  : workDetails.karigar
+                  ? [workDetails.karigar]
+                  : [];
+              if (assigned.length > 1) {
+                return (
+                  <div>
+                    <span className="text-content-secondary block font-bold mb-1">
+                      Returning Technician:
+                    </span>
+                    <select
+                      value={selectedReturningKarigarId}
+                      onChange={(e) => setSelectedReturningKarigarId(e.target.value)}
+                      className="px-2 py-1 rounded-lg border border-surface-border text-xs font-semibold bg-white"
+                    >
+                      {assigned.map((k) => (
+                        <option key={k._id} value={k._id}>
+                          {k.fullName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              }
+              return (
+                <div>
+                  <span className="text-content-secondary block">Assigned Technician:</span>
+                  <span className="font-bold text-content-primary text-sm">
+                    {assigned[0]?.fullName || workDetails.karigar?.fullName || 'Technician'}
+                  </span>
+                </div>
+              );
+            })()}
             <div>
               <span className="text-content-secondary block">Work Date:</span>
               <span className="font-bold text-content-primary">

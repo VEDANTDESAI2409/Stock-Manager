@@ -3,6 +3,7 @@ import Product from '../models/Product.js';
 import StockTransaction from '../models/StockTransaction.js';
 import WorkEntry from '../models/WorkEntry.js';
 import MaterialReturn from '../models/MaterialReturn.js';
+import Karigar from '../models/Karigar.js';
 import { supportsTransactions } from '../config/db.js';
 
 /**
@@ -129,7 +130,46 @@ export const recordStockAdjustment = async ({ productId, newQuantity, reason, da
  * Issue Materials for Work Entry (Atomic deduction)
  */
 export const issueMaterialsForWork = async (workData) => {
-  const { workOrderNumber, workDate, karigar, customerName, customerPhone, customerAddress, notes, materials } = workData;
+  const {
+    workOrderNumber,
+    workDate,
+    karigar,
+    karigars,
+    customerName,
+    customerPhone,
+    customerAddress,
+    notes,
+    materials,
+    photos,
+  } = workData;
+
+  // Normalize karigars list (supporting both single karigar and multiple karigars)
+  let assignedKarigars = [];
+  if (Array.isArray(karigars) && karigars.length > 0) {
+    assignedKarigars = karigars.map((k) => (k && k._id ? k._id.toString() : k.toString()));
+  } else if (karigar) {
+    assignedKarigars = [karigar.toString()];
+  }
+
+  // Deduplicate
+  assignedKarigars = [...new Set(assignedKarigars.filter(Boolean))];
+
+  if (assignedKarigars.length === 0) {
+    throw new Error('At least one assigned Karigar (technician) is required.');
+  }
+
+  // Verify all Karigars exist and are active
+  const karigarDocs = await Karigar.find({ _id: { $in: assignedKarigars } });
+  if (karigarDocs.length !== assignedKarigars.length) {
+    throw new Error('One or more selected Karigars do not exist.');
+  }
+
+  const inactive = karigarDocs.find((k) => k.status !== 'ACTIVE');
+  if (inactive) {
+    throw new Error(
+      `Cannot issue materials to inactive Karigar "${inactive.fullName}". Please activate the technician first.`
+    );
+  }
 
   if (!materials || !Array.isArray(materials) || materials.length === 0) {
     throw new Error('At least one product material must be added to the work entry.');
@@ -199,12 +239,14 @@ export const issueMaterialsForWork = async (workData) => {
         {
           workOrderNumber,
           workDate,
-          karigar,
+          karigar: assignedKarigars[0],
+          karigars: assignedKarigars,
           customerName,
           customerPhone,
           customerAddress,
           notes,
           materials: validatedMaterials,
+          photos: Array.isArray(photos) ? photos : [],
           status: 'ACTIVE',
         },
       ],
@@ -239,6 +281,7 @@ export const issueMaterialsForWork = async (workData) => {
 
     return await WorkEntry.findById(workEntry._id)
       .populate('karigar', 'fullName phone status')
+      .populate('karigars', 'fullName phone status')
       .populate('materials.product', 'name unit currentStock');
   } catch (err) {
     if (useTx && session) {

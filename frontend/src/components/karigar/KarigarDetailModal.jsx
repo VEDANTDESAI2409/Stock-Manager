@@ -209,6 +209,27 @@ const KarigarDetailModal = ({ isOpen, onClose, karigarId }) => {
                       <p className="font-medium text-content-secondary mt-0.5">
                         Customer: {w.customerName} ({w.customerAddress})
                       </p>
+                      {(() => {
+                        const allTechs =
+                          w.karigars && w.karigars.length > 0
+                            ? w.karigars
+                            : w.karigar
+                            ? [w.karigar]
+                            : [];
+                        const coTechs = allTechs.filter(
+                          (k) =>
+                            k &&
+                            (k._id ? k._id.toString() : k.toString()) !== karigar._id.toString()
+                        );
+                        if (coTechs.length > 0) {
+                          return (
+                            <p className="text-[11px] text-primary-700 font-semibold mt-0.5">
+                              👥 Team job with: {coTechs.map((k) => k.fullName).join(', ')}
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                     <div>
                       <Badge

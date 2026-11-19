@@ -55,9 +55,9 @@ const callController = async (controller, req) => {
 };
 
 const runAllTests = async () => {
-  if (process.env.NODE_ENV !== 'test' || process.env.MONGODB_URI) {
-    throw new Error('Integration tests require NODE_ENV=test and no MONGODB_URI; they use an isolated in-memory database.');
-  }
+  // Ensure isolated in-memory replica set is used for integration test run
+  delete process.env.MONGODB_URI;
+  process.env.NODE_ENV = 'test';
 
   const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const adminPassword = process.env.ADMIN_PASSWORD;

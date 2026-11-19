@@ -81,6 +81,7 @@ export const getWorkEntryReturnableItems = async (req, res, next) => {
   try {
     const workEntry = await WorkEntry.findById(req.params.workEntryId)
       .populate('karigar', 'fullName phone')
+      .populate('karigars', 'fullName phone')
       .populate('materials.product', 'name unit currentStock');
 
     if (!workEntry) {
@@ -116,6 +117,7 @@ export const getWorkEntryReturnableItems = async (req, res, next) => {
           customerName: workEntry.customerName,
           customerAddress: workEntry.customerAddress,
           karigar: workEntry.karigar,
+          karigars: workEntry.karigars,
         },
         items: returnableItems,
       },

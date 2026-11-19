@@ -26,11 +26,32 @@ export const getKarigars = async (req, res, next) => {
 
     const karigars = await Karigar.find(query).sort({ fullName: 1 });
 
-    // Calculate quick counts for each karigar
+    // Calculate quick counts for each karigar (supports multi-karigar work entries)
     const karigarIds = karigars.map((k) => k._id);
     const workCounts = await WorkEntry.aggregate([
-      { $match: { karigar: { $in: karigarIds }, status: { $ne: 'CANCELLED' } } },
-      { $group: { _id: '$karigar', totalWork: { $sum: 1 } } },
+      {
+        $match: {
+          status: { $ne: 'CANCELLED' },
+          $or: [
+            { karigars: { $in: karigarIds } },
+            { karigar: { $in: karigarIds } },
+          ],
+        },
+      },
+      {
+        $project: {
+          allKarigars: {
+            $cond: {
+              if: { $and: [{ $isArray: '$karigars' }, { $gt: [{ $size: '$karigars' }, 0] }] },
+              then: '$karigars',
+              else: ['$karigar'],
+            },
+          },
+        },
+      },
+      { $unwind: '$allKarigars' },
+      { $match: { allKarigars: { $in: karigarIds } } },
+      { $group: { _id: '$allKarigars', totalWork: { $sum: 1 } } },
     ]);
     const workMap = new Map(workCounts.map((w) => [w._id.toString(), w.totalWork]));
 
@@ -60,8 +81,12 @@ export const getKarigarById = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Karigar not found' });
     }
 
-    // Work entries
-    const workEntries = await WorkEntry.find({ karigar: karigar._id })
+    // Work entries (support both legacy single karigar and multi-karigar work entries)
+    const workEntries = await WorkEntry.find({
+      $or: [{ karigars: karigar._id }, { karigar: karigar._id }],
+    })
+      .populate('karigar', 'fullName phone status')
+      .populate('karigars', 'fullName phone status')
       .populate('materials.product', 'name unit')
       .sort({ workDate: -1 });
 

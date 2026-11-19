@@ -24,6 +24,7 @@ export const getDashboardStats = async (req, res, next) => {
         Attendance.find({ date: today }).select('status').lean(),
         WorkEntry.find()
           .populate('karigar', 'fullName phone')
+          .populate('karigars', 'fullName phone')
           .populate('materials.product', 'name unit')
           .sort({ workDate: -1, createdAt: -1 })
           .limit(5),
@@ -148,7 +149,7 @@ export const getKarigarMaterialReport = async (req, res, next) => {
     const workQuery = { status: { $ne: 'CANCELLED' } };
 
     if (karigarId && karigarId !== 'ALL') {
-      workQuery.karigar = karigarId;
+      workQuery.$or = [{ karigar: karigarId }, { karigars: karigarId }];
     }
 
     if (startDate || endDate) {
@@ -163,48 +164,60 @@ export const getKarigarMaterialReport = async (req, res, next) => {
 
     const entries = await WorkEntry.find(workQuery)
       .populate('karigar', 'fullName phone status')
+      .populate('karigars', 'fullName phone status')
       .populate('materials.product', 'name unit')
       .sort({ workDate: -1 });
 
     // Aggregate by Karigar & Product
     const summary = {};
     entries.forEach((w) => {
-      const kId = w.karigar ? w.karigar._id.toString() : 'Unknown';
-      const kName = w.karigar ? w.karigar.fullName : 'Unknown';
+      const assigned =
+        w.karigars && w.karigars.length > 0 ? w.karigars : w.karigar ? [w.karigar] : [];
+      const relevantKarigars =
+        karigarId && karigarId !== 'ALL'
+          ? assigned.filter((k) => k && k._id && k._id.toString() === karigarId.toString())
+          : assigned.length > 0
+          ? assigned
+          : [{ _id: 'Unknown', fullName: 'Unknown', phone: '' }];
 
-      if (!summary[kId]) {
-        summary[kId] = {
-          karigarId: kId,
-          karigarName: kName,
-          phone: w.karigar ? w.karigar.phone : '',
-          totalWorks: 0,
-          materials: {},
-        };
-      }
+      relevantKarigars.forEach((k) => {
+        const kId = k._id ? k._id.toString() : 'Unknown';
+        const kName = k.fullName || 'Unknown';
 
-      summary[kId].totalWorks++;
-
-      w.materials.forEach((m) => {
-        const prodName = m.productNameSnapshot || (m.product && m.product.name) || 'Product';
-        const unit = m.unitSnapshot || (m.product && m.product.unit) || 'Piece';
-        const key = `${prodName} (${unit})`;
-
-        if (!summary[kId].materials[key]) {
-          summary[kId].materials[key] = {
-            productName: prodName,
-            unit,
-            issued: 0,
-            returned: 0,
-            pending: 0,
+        if (!summary[kId]) {
+          summary[kId] = {
+            karigarId: kId,
+            karigarName: kName,
+            phone: k.phone || '',
+            totalWorks: 0,
+            materials: {},
           };
         }
 
-        summary[kId].materials[key].issued += m.issuedQuantity;
-        summary[kId].materials[key].returned += m.returnedQuantity || 0;
-        summary[kId].materials[key].pending = Math.max(
-          0,
-          summary[kId].materials[key].issued - summary[kId].materials[key].returned
-        );
+        summary[kId].totalWorks++;
+
+        w.materials.forEach((m) => {
+          const prodName = m.productNameSnapshot || (m.product && m.product.name) || 'Product';
+          const unit = m.unitSnapshot || (m.product && m.product.unit) || 'Piece';
+          const key = `${prodName} (${unit})`;
+
+          if (!summary[kId].materials[key]) {
+            summary[kId].materials[key] = {
+              productName: prodName,
+              unit,
+              issued: 0,
+              returned: 0,
+              pending: 0,
+            };
+          }
+
+          summary[kId].materials[key].issued += m.issuedQuantity;
+          summary[kId].materials[key].returned += m.returnedQuantity || 0;
+          summary[kId].materials[key].pending = Math.max(
+            0,
+            summary[kId].materials[key].issued - summary[kId].materials[key].returned
+          );
+        });
       });
     });
 
@@ -253,6 +266,7 @@ export const getCustomerWorkReport = async (req, res, next) => {
 
     const records = await WorkEntry.find(query)
       .populate('karigar', 'fullName phone')
+      .populate('karigars', 'fullName phone')
       .populate('materials.product', 'name unit')
       .sort({ workDate: -1 });
 

@@ -14,6 +14,8 @@ import {
   Ban,
   Calendar,
   User,
+  Users,
+  Camera,
   MapPin,
   FileText,
 } from 'lucide-react';
@@ -191,12 +193,23 @@ const WorkEntriesPage = () => {
                     <tr key={entry._id} className="hover:bg-slate-50/80 transition-colors">
                       {/* Order & Date */}
                       <td className="py-3 px-4">
-                        <span
-                          onClick={() => setDetailEntryId(entry._id)}
-                          className="font-bold text-content-primary hover:text-primary-600 cursor-pointer block text-sm"
-                        >
-                          {entry.workOrderNumber}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            onClick={() => setDetailEntryId(entry._id)}
+                            className="font-bold text-content-primary hover:text-primary-600 cursor-pointer block text-sm"
+                          >
+                            {entry.workOrderNumber}
+                          </span>
+                          {entry.photos && entry.photos.length > 0 && (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold"
+                              title={`${entry.photos.length} photo(s) attached`}
+                            >
+                              <Camera className="w-3 h-3 text-primary-500" />
+                              {entry.photos.length}
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[11px] text-content-muted flex items-center gap-1 mt-0.5">
                           <Calendar className="w-3 h-3" />
                           {new Date(entry.workDate).toLocaleDateString('en-IN', {
@@ -207,16 +220,46 @@ const WorkEntriesPage = () => {
                         </span>
                       </td>
 
-                      {/* Karigar */}
+                      {/* Karigar / Technicians */}
                       <td className="py-3 px-4">
-                        <span className="font-bold text-content-primary block text-sm">
-                          {entry.karigar?.fullName || 'Technician'}
-                        </span>
-                        {entry.karigar?.phone && (
-                          <span className="text-[11px] text-content-secondary">
-                            {entry.karigar.phone}
-                          </span>
-                        )}
+                        {(() => {
+                          const assigned =
+                            entry.karigars && entry.karigars.length > 0
+                              ? entry.karigars
+                              : entry.karigar
+                              ? [entry.karigar]
+                              : [];
+                          if (assigned.length === 0) {
+                            return <span className="text-content-muted text-xs">Unassigned</span>;
+                          }
+                          const primary = assigned[0];
+                          return (
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-content-primary block text-sm">
+                                  {primary.fullName || 'Technician'}
+                                </span>
+                                {assigned.length > 1 && (
+                                  <span
+                                    className="px-1.5 py-0.5 bg-primary-50 text-primary-700 font-bold text-[10px] rounded-full border border-primary-100"
+                                    title={assigned.map((k) => k.fullName).join(', ')}
+                                  >
+                                    +{assigned.length - 1} more
+                                  </span>
+                                )}
+                              </div>
+                              {primary.phone ? (
+                                <span className="text-[11px] text-content-secondary">
+                                  {primary.phone}
+                                </span>
+                              ) : assigned.length > 1 ? (
+                                <span className="text-[10px] text-content-muted block truncate max-w-xs">
+                                  Team: {assigned.map((k) => k.fullName).join(', ')}
+                                </span>
+                              ) : null}
+                            </div>
+                          );
+                        })()}
                       </td>
 
                       {/* Customer & Address */}
