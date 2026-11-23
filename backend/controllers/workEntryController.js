@@ -98,7 +98,7 @@ export const getWorkEntryById = async (req, res, next) => {
     const workEntry = await WorkEntry.findById(req.params.id)
       .populate('karigar', 'fullName phone status address')
       .populate('karigars', 'fullName phone status address')
-      .populate('materials.product', 'name unit currentStock');
+      .populate('materials.product', 'name modelNumber unit currentStock');
 
     if (!workEntry) {
       return res.status(404).json({ success: false, message: 'Work entry not found.' });

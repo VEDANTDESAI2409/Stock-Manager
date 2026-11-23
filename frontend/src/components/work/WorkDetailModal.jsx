@@ -21,7 +21,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Upload,
+  FileDown,
+  LoaderCircle,
 } from 'lucide-react';
+import { downloadWorkEntryPdf } from '../../utils/workEntryPdf';
 
 const WorkDetailModal = ({ isOpen, onClose, workEntryId, onOpenReturnModal }) => {
   const { showSuccess, showError } = useToast();
@@ -30,6 +33,7 @@ const WorkDetailModal = ({ isOpen, onClose, workEntryId, onOpenReturnModal }) =>
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [photoToDelete, setPhotoToDelete] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const workQuery = useApiQuery(`/work-entries/${workEntryId || ''}`, {
     enabled: Boolean(workEntryId && isOpen),
@@ -55,6 +59,23 @@ const WorkDetailModal = ({ isOpen, onClose, workEntryId, onOpenReturnModal }) =>
   const hasRemainingReturns = entry?.materials?.some(
     (m) => m.issuedQuantity - (m.returnedQuantity || 0) > 0
   );
+
+  const handleDownloadPdf = async () => {
+    if (!entry || generatingPdf) return;
+    setGeneratingPdf(true);
+    try {
+      const imageFailures = await downloadWorkEntryPdf(entry);
+      if (imageFailures.length) {
+        showError(`PDF downloaded, but ${imageFailures.length} photo(s) could not be loaded and are marked in the report.`);
+      } else {
+        showSuccess('Work Entry PDF downloaded successfully.');
+      }
+    } catch (error) {
+      showError(error.message || 'Could not generate the Work Entry PDF. Please try again.');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
 
   // Upload additional photos to this work entry
   const handleUploadPhotos = async (e) => {
@@ -129,6 +150,18 @@ const WorkDetailModal = ({ isOpen, onClose, workEntryId, onOpenReturnModal }) =>
           <div className="py-12 text-center text-sm text-content-secondary">Loading details...</div>
         ) : entry ? (
           <div className="space-y-6">
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={generatingPdf}
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-primary-500 px-4 py-2 text-xs font-bold text-white shadow-soft transition hover:bg-primary-600 disabled:cursor-wait disabled:opacity-70"
+              >
+                {generatingPdf ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                {generatingPdf ? 'Generating PDF…' : 'Download PDF'}
+              </button>
+            </div>
+
             {/* Header Info Banner */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-slate-50 border border-surface-border text-xs">
               <div>
